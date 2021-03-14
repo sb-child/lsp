@@ -16,7 +16,8 @@ def main():
         this_url = dl.decrypt(this_link)
         print(this_url)
         f1.write(f"# {count}: {link_url[1]}\n")
-        f1.write(f"ffmpeg -i {this_url} -c copy videos/{count}.mp4\n")
+        url_fix = this_url.replace('&', '\\&')
+        f1.write(f"ffmpeg -i {url_fix} -c copy videos/{count}.mp4\n")
         # ffmpeg -i _url -c copy _file
         count += 1
     f1.close()
