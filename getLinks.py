@@ -3,7 +3,7 @@ import re
 import requests
 
 
-class LinksGet:
+class Getter:
     def __init__(self, base_url="https://www.myvzao0ioh7xgjvdon7f8jqbqmef.xyz:59980"):
         self.base_url = base_url
         # pg = open("test1.html").read()
