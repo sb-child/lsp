@@ -9,6 +9,7 @@ def main():
     link_urls = lg.run()
     f1 = open("dld.sh", "w")
     count = 0
+    link_urls.reverse()
     for link_url in link_urls:
         print(link_url)
         this_link = getVideoLink.getLink(link_url[0])

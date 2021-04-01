@@ -4,7 +4,7 @@ import requests
 
 
 class Getter:
-    def __init__(self, base_url="https://www.myvzao0ioh7xgjvdon7f8jqbqmef.xyz:59980"):
+    def __init__(self, base_url="https://www.mymyuij8cmbfu6pdtm68c0h.xyz:59980/"):
         self.base_url = base_url
         # pg = open("test1.html").read()
         self.play_url_re = re.compile("/index.php/vod/play/id/*")
