@@ -4,6 +4,7 @@ import requests
 
 
 class Getter:
+    # 若脚本出错, 请更新此处的base_url. 在实现自动获取链接的功能之前, 欢迎贡献最新的链接
     def __init__(self, base_url="https://www.mymyuij8cmbfu6pdtm68c0h.xyz:59980/"):
         self.base_url = base_url
         # pg = open("test1.html").read()

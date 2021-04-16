@@ -8,6 +8,9 @@ def main():
     dl = decryptLink.Decrypter()
     link_urls = lg.run()
     f1 = open("dld.sh", "w")
+    f2 = open("dld_windows.bat", "w")
+    f1.write("mkdir videos\n")
+    f2.write("mkdir videos\n")
     count = 0
     link_urls.reverse()
     for link_url in link_urls:
@@ -17,11 +20,14 @@ def main():
         this_url = dl.decrypt(this_link)
         print(this_url)
         f1.write(f"# {count}: {link_url[1]}\n")
+        f2.write(f":: {count}: {link_url[1]}\n")
         url_fix = this_url.replace('&', '\\&')
         f1.write(f"ffmpeg -i {url_fix} -c copy videos/{count}.mp4\n")
+        f2.write(f"ffmpeg -i {this_url} -c copy videos/{count}.mp4\n")
         # ffmpeg -i _url -c copy _file
         count += 1
     f1.close()
+    f2.close()
 
 
 if __name__ == '__main__':
