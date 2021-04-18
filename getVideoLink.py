@@ -18,7 +18,7 @@ def getLink(url: str):
         it1 = link_re.findall(it)
         if len(it1) == 0:
             continue
-        if it1[0] == "MiYa188.com":
+        if ".com" in it1[0]:
             continue
         res: str = it1[0]
         return res.replace("\\", "")
