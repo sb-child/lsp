@@ -11,12 +11,12 @@ pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm --user
 ```
 
 # 获取视频
-> 若需生成下载脚本, 需运行
-> `python3 test.py`
+> 若需生成下载脚本, 需运行  
+> `python3 test.py`  
 > windows用户, 将`python3`替换为`python`
 
-> 若需要全自动下载, 则
-> `python3 test2.py`
+> 若需要全自动下载, 则  
+> `python3 test2.py`  
 > windows用户, 将`python3`替换为`python`
 
 # 执行下载脚本
@@ -31,8 +31,8 @@ bash dld.sh
 > 运行 dld_windows.bat
 
 # 文件描述
-> `test.py` 获取链接, 生成下载脚本
-> `test2.py` 全自动下载脚本
+> `test.py` 获取链接, 生成下载脚本  
+> `test2.py` 全自动下载脚本  
 > `getLinks.py` 模块: 获取网页链接  
 > `getVideoLink.py` 模块: 获取视频链接  
 > `decryptLink.py` 模块: 解密视频链接  
