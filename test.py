@@ -33,8 +33,9 @@ def main():
         f1.write(f"# img: {link_url[2]}\n")
         f2.write(f":: img: {link_url[2]}\n")
         url_fix = this_url.replace('&', '\\&')
+        url_fix_windows = this_url.replace('&', '^&')
         f1.write(f"ffmpeg {ua} {headers} -i {url_fix} -c copy {videos_dir}/{count}.mp4\n")
-        f2.write(f"ffmpeg {ua} {headers} -i {this_url} -c copy {videos_dir}/{count}.mp4\n")
+        f2.write(f"ffmpeg {ua} {headers} -i {url_fix_windows} -c copy {videos_dir}/{count}.mp4\n")
         f1.write("\n")
         f2.write("\n")
         # ffmpeg -i _url -c copy _file
