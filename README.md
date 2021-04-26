@@ -5,6 +5,7 @@
 > 需要事先安装python和ffmpeg, windows用户需要配置环境变量.  
 > 同时, windows用户需要安装 [vsBuildTools](https://visualstudio.microsoft.com/zh-hans/thank-you-downloading-visual-studio/?sku=Community&rel=15#) 以安装`pycrypto`库  
 > > 注意: 在安装界面勾选 `c++ 生成工具` 组件  
+
 > linux用户: `pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm --user`  
 > windows用户: 运行 `init.cmd`
 
