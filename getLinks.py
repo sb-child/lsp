@@ -9,12 +9,16 @@ class Getter:
     def __init__(self, base_url=""):
         # http://www.my1132.com/?u=0.844066510415847&path=null
         # var _0x7e7501='h'+'t'+'t'+'p'+'s' ... '5'+'9'+'9'+'8'+'0';
-        pg = requests.get(f"http://www.my1132.com/?u={random.random()}&path=null",
+        pg = requests.get(f"http://miyajump.xyz/?url=webjump",
+                          headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/83.0"}
+                          ).text
+        url1 = re.search("http://www.*.com/", pg)[0]
+        pg = requests.get(f"{url1}?u={random.random()}&path=null",
                           headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/83.0"}
                           ).text
         url_header_index = pg.find("'h'+'t'+'t'+'p'+'s'")
         url_footer_index = pg.find("'5'+'9'+'9'+'8'+'0'") + 19
-        auto_url = pg[url_header_index:url_footer_index].replace("'", "").replace("+", "")  # + "/"
+        auto_url = pg[url_header_index:url_footer_index].replace("'", "").replace("+", "")
 
         self.base_url = auto_url if base_url == "" else base_url
         print(f"使用网址: {self.base_url}")
