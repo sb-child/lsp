@@ -25,7 +25,6 @@ def main():
     for link_url in link_urls:
         print(f"视频{count}:", link_url)
         this_link = getVideoLink.getLink(link_url[0])
-        # print(this_link)
         this_url = dl.decrypt(this_link)
         print(f"视频{count}的链接:", this_url)
         f1.write(f"# {count}: {link_url[1]}\n")
