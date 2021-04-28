@@ -11,17 +11,17 @@
 > windows用户: 运行 `init.cmd`
 
 # 获取视频
-> 若需生成下载脚本, 则  
-> linux用户: `python3 test.py`  
-> windows用户: 运行 `auto_download.cmd`
-
-> 若需要全自动下载, 则  
+> \[推荐\] 全自动下载 
 > linux用户: `python3 test2.py`  
 > windows用户: 运行 `gen_link.cmd`
 
-# 执行下载脚本
-> linux 用户: `bash dld.sh`  
-> windows 用户: 运行 `dld_windows.bat`
+> 生成下载脚本
+> linux用户: `python3 test.py`  
+> windows用户: 运行 `auto_download.cmd`
+
+> > 运行下载脚本
+> > linux 用户: `bash dld.sh`  
+> > windows 用户: 运行 `dld_windows.bat`
 
 # 文件描述
 > `test.py` 获取链接, 生成下载脚本  

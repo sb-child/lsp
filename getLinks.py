@@ -5,20 +5,22 @@ import random
 
 
 class Getter:
-    def __init__(self, base_url=""):
+    def __init__(self):
+        print("-> 访问[miyajump.xyz]以获取链接...")
         pg = requests.get(f"http://miyajump.xyz/?url=webjump",
                           headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/83.0"}
                           ).text
         url1 = re.search("http://www.*.com/", pg)[0]
+        print(f"-> 得到跳转页链接[{url1}].正在获取主页链接...")
         pg = requests.get(f"{url1}?u={random.random()}&path=null",
                           headers={"User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/83.0"}
                           ).text
         url_header_index = pg.find("'h'+'t'+'t'+'p'+'s'")
         url_footer_index = pg.find("'5'+'9'+'9'+'8'+'0'") + 19
         auto_url = pg[url_header_index:url_footer_index].replace("'", "").replace("+", "")
-
-        self.base_url = auto_url if base_url == "" else base_url
-        print(f"使用网址: {self.base_url}")
+        print(f"-> 得到主页链接[{auto_url}].")
+        self.base_url = auto_url  # if base_url == "" else base_url
+        # print(f"使用网址: {self.base_url}")
         self.play_url_re = re.compile("/index.php/vod/play/id/*")
 
     def run(self):
@@ -46,7 +48,7 @@ class Getter:
             can_dld = True
             for i in link_urls:
                 if i[0] == self.base_url + link_url:
-                    print(f"重复: {link_title}")
+                    print(f"-> 重复: {link_title}")
                     can_dld = False
                     break
             if self.play_url_re.match(link_url) and can_dld:

@@ -7,6 +7,20 @@ import time
 import os
 import tqdm
 import subprocess
+import retrying
+
+
+def on_err(attempts, delay):
+    print("下载失败, 稍后重试...")
+
+
+@retrying.retry(stop_max_attempt_number=10, wait_random_min=5000,
+                wait_random_max=10000, wait_incrementing_increment=0, stop_func=on_err)
+def downloadVideoPart(dld_url: str, pool: urllib3.poolmanager.PoolManager, filename: str):
+    req: urllib3.response.HTTPResponse = pool.request("GET", dld_url)
+    with open(filename, "wb") as f:
+        f.write(req.data)
+    req.close()
 
 
 def main():
@@ -30,13 +44,17 @@ def main():
         videos_list = tsDecode.decoder(video_list_str)  # [:10]
         videos_list_len = len(videos_list)
         req.close()
+        skip = False
         for i in progressbar(range(videos_list_len), desc="下载视频"):
             dld_url = videos_list[i]
-            req: urllib3.response.HTTPResponse = dldPool.request("GET", dld_url)
             fn = os.path.join(videos_dir, f"temp_{count}_{i}.ts")
-            with open(fn, "wb") as f:
-                f.write(req.data)
-            req.close()
+            try:
+                downloadVideoPart(dld_url, dldPool, fn)
+            except Exception:
+                skip = True
+        if skip:
+            print("多次下载失败, 跳过.")
+            break
         fn = os.path.join(videos_dir, f"temp2_{count}.ts")
         for i in progressbar(range(videos_list_len), desc="合并视频"):
             fn2 = os.path.join(videos_dir, f"temp_{count}_{i}.ts")
