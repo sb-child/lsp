@@ -7,7 +7,7 @@
 > > 注意: 在安装界面勾选 `c++ 生成工具` 组件  
 > > 若安装失败, 可考虑使用`虚拟机`, `git bash`或者`linux子系统`运行此项目
 
-> linux用户: `pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm --user`  
+> linux用户: `pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying --user`  
 > windows用户: 运行 `init.cmd`
 
 # 获取视频
