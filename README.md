@@ -11,7 +11,7 @@
 > windows用户: 运行 `init.cmd`
 
 # 获取视频
-> \[推荐\] 全自动下载 
+> \[推荐\] 全自动下载  
 > linux用户: `python3 test2.py`  
 > windows用户: 运行 `gen_link.cmd`
 
