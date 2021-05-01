@@ -7,20 +7,21 @@
 > > 注意: 在安装界面勾选 `c++ 生成工具` 组件  
 > > 若安装失败, 可考虑使用`虚拟机`, `git bash`或者`linux子系统`运行此项目
 
-> linux用户: `pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying --user`  
+> linux用户: `pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying hashlib --user`  
 > windows用户: 运行 `init.cmd`
 
 # 获取视频
-> \[推荐\] 全自动下载  
+## \[推荐\] 全自动下载
 > linux用户: `python3 test2.py`  
 > windows用户: 运行 `gen_link.cmd`
 
-> 生成下载脚本
+## \[不推荐\]生成脚本方式
+### 生成下载脚本
 > linux用户: `python3 test.py`  
 > windows用户: 运行 `auto_download.cmd`  
-> > 运行下载脚本
-> > linux 用户: `bash dld.sh`  
-> > windows 用户: 运行 `dld_windows.bat`
+### 运行下载脚本
+> linux 用户: `bash dld.sh`  
+> windows 用户: 运行 `dld_windows.bat`
 
 # 文件描述
 > `test.py` 获取链接, 生成下载脚本  
