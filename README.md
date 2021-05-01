@@ -17,8 +17,7 @@
 
 > 生成下载脚本
 > linux用户: `python3 test.py`  
-> windows用户: 运行 `auto_download.cmd`
-
+> windows用户: 运行 `auto_download.cmd`  
 > > 运行下载脚本
 > > linux 用户: `bash dld.sh`  
 > > windows 用户: 运行 `dld_windows.bat`
@@ -29,6 +28,7 @@
 > `getLinks.py` 模块: 获取网页链接  
 > `getVideoLink.py` 模块: 获取视频链接  
 > `decryptLink.py` 模块: 解密视频链接  
+> `tsDecode.py` 模块: 解码m3u8列表
 
 # todo
 > 尝试适配其他网站  
