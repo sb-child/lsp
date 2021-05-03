@@ -58,5 +58,5 @@ class Puller:
         self.log("获取完成.")
         return {
             "list": videos_list,
-            "links": this_link,
+            "links": link_url,
         }

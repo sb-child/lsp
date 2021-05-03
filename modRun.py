@@ -7,16 +7,15 @@ import argparse
 
 
 def main(selected_mod: str, dld_dir: list):
-    videos_dir = "videos_auto_" + str(int(time.time())) if len(dld_dir) == 0 else dld_dir[0]
-    print(f"视频将下载到[{videos_dir}]目录")
-    os.mkdir(videos_dir)
-    print(selected_mod)
     if selected_mod == "miya":
         mod = mod_miya.Puller()
     elif selected_mod == "yysp":
         mod = mod_yysp.Puller()
     else:
         raise Exception("找不到模块")
+    videos_dir = "videos_auto_" + str(int(time.time())) if dld_dir is None else dld_dir[0]
+    os.mkdir(videos_dir)
+    print(f"视频将下载到[{videos_dir}]目录")
     mod.fetch()
     for i in range(len(mod.lastLinks)):
         link = mod.getDownloadLink(i)

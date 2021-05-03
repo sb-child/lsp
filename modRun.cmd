@@ -1,2 +1,0 @@
-python modRun.py
-pause

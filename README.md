@@ -12,8 +12,16 @@
 
 # 获取视频
 ## \[推荐\] 模块化全自动下载
-> linux用户: `python3 test2.py`  
-> windows用户: 运行 `modRun.cmd`
+> 命令行参数:  
+> `--mod` 指定要加载的模块  
+> > 可用模块:  
+> `miya` \(`蜜芽`\)  
+> `yysp` \(`夜夜視頻資源站`\)  
+
+> `--dir` 指定下载目录(可选)  
+
+> linux用户: `python3 test2.py --mod 模块 --dir 目录`  
+> windows用户: 运行 `modRunMiya.cmd` 或 `modRunYysp.cmd`
 
 [comment]: <> (## \[推荐\] 全自动下载)
 
