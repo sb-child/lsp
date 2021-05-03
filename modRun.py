@@ -17,7 +17,9 @@ def main(selected_mod: str, dld_dir: list):
     os.mkdir(videos_dir)
     print(f"视频将下载到[{videos_dir}]目录")
     mod.fetch()
-    for i in range(len(mod.lastLinks)):
+    link_len = len(mod.lastLinks)
+    print(f"获取到{link_len}个视频")
+    for i in range(link_len):
         link = mod.getDownloadLink(i)
         downloader.downloadM3u8(link=link, out_dir=videos_dir, out_file=f"out_{i}")
 
