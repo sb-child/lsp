@@ -1,8 +1,21 @@
+# 下载模块
+import os
+import subprocess
+import uuid
+import retrying
 import urllib3
+from typing import Union
+from tqdm import tqdm
+
+dldPool = urllib3.PoolManager()
 
 
 def urlGet(pool: urllib3.poolmanager.PoolManager, url: str):
-    req: urllib3.response.HTTPResponse = pool.request("GET", url)
+    try:
+        req: urllib3.response.HTTPResponse = pool.request("GET", url)
+    except Exception as e:
+        print("* 抛出异常:", e)
+        raise e
     return req.data
 
 
@@ -13,3 +26,51 @@ def urlGetToBinFile(pool, url, fn: str):
 
 def urlGetToStr(pool, url, encoding="utf-8"):
     return urlGet(pool, url).decode(encoding)
+
+
+def on_err(attempts, delay):
+    print("下载失败, 稍后重试...")
+
+
+@retrying.retry(stop_max_attempt_number=10, wait_random_min=5000,
+                wait_random_max=10000, wait_incrementing_increment=0, stop_func=on_err)
+def downloadVideoPart(dld_url: str, filename: str, pool: urllib3.poolmanager.PoolManager):
+    urlGetToBinFile(pool, dld_url, filename)
+
+
+def downloadM3u8(link: dict[str, Union[list[str], tuple[str, str, str]]],
+                 out_dir: str, out_file: str, pool=dldPool):
+    videos_list = link["list"]
+    link_url = link["links"]
+    videos_list_len = len(videos_list)
+    uid = uuid.uuid4().__str__()
+    for i in tqdm(range(videos_list_len), desc="下载视频"):
+        dld_url = videos_list[i]
+        fn = os.path.join(out_dir, f"t_{uid}_{i}.ts")
+        try:
+            downloadVideoPart(dld_url=dld_url, pool=pool, filename=fn)
+        except Exception:
+            raise ConnectionError("多次下载失败, 放弃.")
+    fn = os.path.join(out_dir, f"t2_{uid}.ts")
+    for i in tqdm(range(videos_list_len), desc="合并视频"):
+        fn2 = os.path.join(out_dir, f"t_{uid}_{i}.ts")
+        with open(fn2, "rb") as f:
+            data = f.read()
+        with open(fn, "ab+") as f:
+            f.write(data)
+        os.remove(fn2)
+    print("转换为mp4格式...")
+    fn3 = os.path.join(out_dir, f"{out_file}.mp4")
+    if subprocess.run(f"ffmpeg -v 0 -y -i {fn} -c copy {fn3}", shell=True).returncode != 0:
+        print("格式转换时出错.")
+        return 1
+    os.remove(fn)
+    print("下载封面...")
+    fn_img = os.path.join(out_dir, f"{out_file}.jpg")
+    urlGetToBinFile(pool, link_url[2], fn_img)
+    print("写出描述文件...")
+    fn_desc = os.path.join(out_dir, f"{out_file}.txt")
+    with open(fn_desc, "w") as f:
+        f.write("\n".join(link_url))
+    print("完成.")
+    pass
