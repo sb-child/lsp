@@ -14,7 +14,7 @@ def urlGet(pool: urllib3.poolmanager.PoolManager, url: str):
     try:
         req: urllib3.response.HTTPResponse = pool.request("GET", url)
     except Exception as e:
-        print("* 抛出异常:", e)
+        print(f"* 下载[{url}]时抛出异常:", e)
         raise e
     return req.data
 

@@ -9,7 +9,7 @@ headers = ""  # "-headers " + '"sec-ch-ua: \'Chromium\';v=\'88\', \'Google Chrom
 
 
 def main():
-    lg = getLinks.Getter()
+    lg = getLinks.GetterMiya()
     dl = decryptLink.Decrypter()
     link_urls = lg.run()
     f1 = open("dld.sh", "w")

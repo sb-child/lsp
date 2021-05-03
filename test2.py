@@ -41,7 +41,7 @@ def linkFormat(link: tuple[str, str, str]):
 
 
 def main():
-    lg = getLinks.Getter()
+    lg = getLinks.GetterMiya()
     dl = decryptLink.Decrypter()
     link_urls = lg.run()
     dldPool = urllib3.PoolManager()
