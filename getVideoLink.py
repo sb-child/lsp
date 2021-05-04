@@ -7,7 +7,6 @@ link_re = re.compile(r'"url":"(.*?)",')
 
 
 def getLink(url: str):
-    # print(url)
     pg = myReqGet(url)
     page = bs4.BeautifulSoup(pg, "lxml")
     for i in page.find_all("script"):

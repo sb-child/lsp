@@ -31,5 +31,5 @@ if __name__ == '__main__':
     parser.add_argument('--dir', dest='dir', action='store', nargs=1,
                         help='指定下载目录', type=str)
     args = parser.parse_args()
-    # print(args)
     main(str(args.mod[0]), args.dir)
+    # main("yysp", None)
