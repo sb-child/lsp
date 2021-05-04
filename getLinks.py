@@ -91,8 +91,10 @@ class GetterYysp:
         print(f"-> 得到主页链接[{selected_domain}].")
         self.base_url = selected_domain
 
-    def run(self):
-        pg = myReqGet(self.base_url)
+    def run(self, tag=""):
+        url = self.base_url
+        url = url if tag == "" else f"{url}/index.php/vod/type/id/{tag}.html"
+        pg = myReqGet(url)
         page = bs4.BeautifulSoup(pg, "lxml")
         link_urls = []
         new_videos_root: bs4.element.Tag = page.find("div", attrs={"class": "pic"}).findChild("ul")

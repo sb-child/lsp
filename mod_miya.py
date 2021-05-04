@@ -4,12 +4,13 @@ import urllib3
 import getLinks
 import getVideoLink
 import decryptLink
+import modBase
 import tsDecode
 import time
 from downloader import urlGetToStr
 
 
-class Puller:
+class Puller:  # (modBase.Puller):
     def log(self, message: str):
         print(self.modName + ":", message)
 
@@ -20,7 +21,32 @@ class Puller:
         self._dl = decryptLink.Decrypter()
         self._dldPool = urllib3.PoolManager()
         self.lastLinks: list[tuple[str, str, str]] = []
+        self.lastTags: list[list] = []
+        self.selectedTag = ""
         self.log("模块已准备就绪.")
+
+    def getTags(self):
+        self.log("拉取分类列表...")
+        # body = getLinks.myReqGet(self._lg.base_url)
+        # body_bs = bs4.BeautifulSoup(body, "lxml")
+        # tags = body_bs.find_all("a", {"class": "1=0"})
+        # tags_list = []
+        # for i in range(len(tags)):
+        #     tag: bs4.Tag = tags[i]
+        #     # /index.php/vod/type/id/33.html
+        #     tag_name = tag_re.findall(tag.attrs["href"])
+        #     if len(tag_name) == 0:
+        #         continue
+        #     tags_list.append([tag_name[0], tag.text.strip()])
+        #     # ["33", "..."]
+        # self.lastTags = tags_list
+        self.log(f"分类列表拉取完成, 共[{len(self.lastTags)}]个.")
+
+    def setTag(self, tag_name: str):
+        # "33"
+        print("暂不支持..")
+        exit()
+        pass
 
     def fetch(self):
         self.log("拉取视频列表...")

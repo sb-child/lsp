@@ -13,14 +13,21 @@
 # 获取视频
 ## \[推荐\] 模块化全自动下载
 > 命令行参数:  
-> `--mod` 指定要加载的模块  
+> `--mod 模块名` 指定要加载的模块  
 > > 可用模块:  
 > `miya` \(`蜜芽`\)  
 > `yysp` \(`夜夜視頻資源站`\)  
 
-> `--dir` 指定下载目录(可选)  
+> `--dir 目录名` 指定下载目录(可选)  
 
-> linux用户: `python3 test2.py --mod 模块 --dir 目录`  
+> `--tags` 获取当前模块中, 全部可用的标签
+
+> `--tag 标签编号` 指定标签(编号), 否则为默认
+> > 目前, 仅支持`yysp`模块
+
+> `--not-download` 仅拉取视频列表, 不下载
+
+> linux用户: `python3 test2.py --mod 模块`  
 > windows用户: 运行 `modRunMiya.cmd` 或 `modRunYysp.cmd`
 
 [comment]: <> (## \[推荐\] 全自动下载)
