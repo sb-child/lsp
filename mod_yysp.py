@@ -10,9 +10,9 @@ import tsDecode
 import modBase
 from downloader import urlGetToStr
 
-domain_re = re.compile(r'(https://.*?)/')
-link_re = re.compile(r'"url":"(.*?)"')
-tag_re = re.compile(r'/index\.php/vod/type/id/(.*?).html')
+domain_re = modBase.domain_re
+link_re = modBase.link_re
+tag_re = modBase.tag_re
 
 
 def _decoder(url: str):
@@ -30,9 +30,6 @@ def _decoder(url: str):
 
 
 class Puller(modBase.Puller):
-    def log(self, message: str):
-        print(self.modName + ":", message)
-
     def _init(self):
         self._name("yysp")
         self._lg = getLinks.GetterYysp()
@@ -42,15 +39,15 @@ class Puller(modBase.Puller):
         body = getLinks.myReqGet(self._lg.base_url)
         body_bs = bs4.BeautifulSoup(body, "lxml")
         tags = body_bs.find_all("a", {"class": "1=0"})
-        tags_list = []
+        tags_list = {}
         for i in range(len(tags)):
             tag: bs4.Tag = tags[i]
             # /index.php/vod/type/id/33.html
             tag_name = tag_re.findall(tag.attrs["href"])
             if len(tag_name) == 0:
                 continue
-            tags_list.append([tag_name[0], tag.text.strip()])
-            # ["33", "..."]
+            tags_list[tag_name[0]] = tag.text.strip()
+            # {"33": "..."}
         self.lastTags = tags_list
 
     def _setTag(self, tag_name: str):

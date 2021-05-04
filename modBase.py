@@ -1,6 +1,12 @@
+import re
+
 import urllib3
 import decryptLink
 import getLinks
+
+domain_re = re.compile(r'(https://.*?)/')
+link_re = re.compile(r'"url":"(.*?)"')
+tag_re = re.compile(r'/index\.php/vod/type/id/(.*?).html')
 
 
 class Puller:
@@ -18,7 +24,7 @@ class Puller:
         self._init()
         # self.log("载入模块...")
         self.lastLinks: list[tuple[str, str, str]] = []
-        self.lastTags: list[list] = []
+        self.lastTags: dict[str, str] = {}
         self.selectedTag = ""
         self.log("模块已准备就绪.")
 
@@ -34,10 +40,10 @@ class Puller:
         pass
 
     def setTag(self, tag_name: str):
+        self._setTag(tag_name=tag_name)
         if tag_name == "":
             self.log(f"切换到默认标签.")
         self.log(f"指定标签[{tag_name}].")
-        self._setTag(tag_name=tag_name)
 
     def _fetch(self):
         pass

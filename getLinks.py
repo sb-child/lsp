@@ -30,8 +30,10 @@ class GetterMiya:
         self.base_url = auto_url
         self.play_url_re = re.compile("/index.php/vod/play/id/*")
 
-    def run(self):
-        pg = myReqGet(self.base_url)
+    def run(self, tag=""):
+        url = self.base_url
+        # url = url if tag == "" else f"{url}/index.php/vod/type/id/{tag}.html"
+        pg = myReqGet(url)
         page = bs4.BeautifulSoup(pg, "lxml")
         link_urls = []
 
@@ -43,8 +45,9 @@ class GetterMiya:
             _links = links_part.find_all("a", attrs={"class": "stui-vodlist__thumb"})
             return _links
 
-        links = _get_links("無碼")
-        links.extend(_get_links("总热门"))
+        # links = _get_links("無碼")
+        # links.extend(_get_links("总热门"))
+        links = _get_links("总热门" if tag == "" else tag)
         for link in links:
             link: bs4.element.Tag
             link_url = link.attrs["href"]
