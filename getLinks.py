@@ -69,6 +69,7 @@ class GetterYysp:
     def __init__(self):
         print("-> 遍历已知域名以确定主页...")
         domains = [
+            "https://www.yyspzy5.xyz",
             "https://www.yyspzy4.xyz",
             "https://www.yyspzy1.xyz",
             "https://www.yyspzy2.xyz",
@@ -86,8 +87,10 @@ class GetterYysp:
                 print("OK")
                 break
             else:
-
-                print("跳过")
+                refresh_url: str = refresh_ele.attrs["content"]
+                # 0.1;URL=http://www.yyspzy5.xyz
+                selected_domain = refresh_url[7:]
+                print(f"跳转到[{selected_domain}]")
         if selected_domain == "":
             print("-> 找不到可用的域名.")
             raise ConnectionError("找不到可用的域名")

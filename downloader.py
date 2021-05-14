@@ -3,29 +3,29 @@ import os
 import subprocess
 import uuid
 import retrying
-import urllib3
+import requests
 from typing import Union
 from tqdm import tqdm
 
-dldPool = urllib3.PoolManager()
 
-
-def urlGet(pool: urllib3.poolmanager.PoolManager, url: str):
+def urlGet(url: str):
     try:
-        req: urllib3.response.HTTPResponse = pool.request("GET", url)
+        req = requests.get(url, timeout=5)
+        if req.status_code != 200:
+            raise ConnectionError("请求返回值 != 200")
     except Exception as e:
         print(f"* 下载[{url}]时抛出异常:", e)
         raise e
-    return req.data
+    return req.content
 
 
-def urlGetToBinFile(pool, url, fn: str):
+def urlGetToBinFile(url, fn: str):
     with open(fn, "wb") as f:
-        f.write(urlGet(pool, url))
+        f.write(urlGet(url))
 
 
-def urlGetToStr(pool, url, encoding="utf-8"):
-    return urlGet(pool, url).decode(encoding)
+def urlGetToStr(url, encoding="utf-8"):
+    return urlGet(url).decode(encoding)
 
 
 def on_err(attempts, delay):
@@ -34,12 +34,12 @@ def on_err(attempts, delay):
 
 @retrying.retry(stop_max_attempt_number=10, wait_random_min=5000,
                 wait_random_max=10000, wait_incrementing_increment=0, stop_func=on_err)
-def downloadVideoPart(dld_url: str, filename: str, pool: urllib3.poolmanager.PoolManager):
-    urlGetToBinFile(pool, dld_url, filename)
+def downloadVideoPart(dld_url: str, filename: str):
+    urlGetToBinFile(dld_url, filename)
 
 
 def downloadM3u8(link: dict[str, Union[list[str], tuple[str, str, str]]],
-                 out_dir: str, out_file: str, pool=dldPool):
+                 out_dir: str, out_file: str):
     videos_list = link["list"]
     link_url = link["links"]
     videos_list_len = len(videos_list)
@@ -48,7 +48,7 @@ def downloadM3u8(link: dict[str, Union[list[str], tuple[str, str, str]]],
         dld_url = videos_list[i]
         fn = os.path.join(out_dir, f"t_{uid}_{i}.ts")
         try:
-            downloadVideoPart(dld_url=dld_url, pool=pool, filename=fn)
+            downloadVideoPart(dld_url=dld_url, filename=fn)
         except Exception:
             raise ConnectionError("多次下载失败, 放弃.")
     fn = os.path.join(out_dir, f"t2_{uid}.ts")
@@ -67,7 +67,7 @@ def downloadM3u8(link: dict[str, Union[list[str], tuple[str, str, str]]],
     os.remove(fn)
     print("下载封面...")
     fn_img = os.path.join(out_dir, f"{out_file}.jpg")
-    urlGetToBinFile(pool, link_url[2], fn_img)
+    urlGetToBinFile(link_url[2], fn_img)
     print("写出描述文件...")
     fn_desc = os.path.join(out_dir, f"{out_file}.txt")
     with open(fn_desc, "w") as f:

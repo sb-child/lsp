@@ -4,6 +4,8 @@ import mod_miya
 import mod_yysp
 import downloader
 import argparse
+import random
+import string
 
 
 def main(selected_mod: str, dld_dir: list, tags: bool, tag: str, no_dld: bool):
@@ -19,11 +21,15 @@ def main(selected_mod: str, dld_dir: list, tags: bool, tag: str, no_dld: bool):
             j = mod.lastTags[i]
             print(f"标签编号[{j[0]}], 标签名[{j[1]}]")
         return 0
-    if tag is not None:
+    if tag != "":
         mod.setTag(tag)
     videos_dir = ""
     if not no_dld:
-        videos_dir = "videos_auto_" + str(int(time.time())) if dld_dir is None else dld_dir[0]
+        videos_dir = "v_auto_" + \
+                     "".join(random.choices(string.hexdigits, k=5)) + \
+                     "_" + \
+                     str(int(time.time())) \
+            if dld_dir is None else dld_dir[0]
         os.mkdir(videos_dir)
         print(f"视频将下载到[{videos_dir}]目录")
     mod.fetch()

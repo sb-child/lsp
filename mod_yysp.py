@@ -1,9 +1,7 @@
 # yysp: 夜夜視頻資源站
 # 视频拉取模块
-import re
 import time
 import bs4
-import urllib3
 import getLinks
 import getVideoLink
 import tsDecode
@@ -33,7 +31,6 @@ class Puller(modBase.Puller):
     def _init(self):
         self._name("yysp")
         self._lg = getLinks.GetterYysp()
-        self._dldPool = urllib3.PoolManager()
 
     def _getTags(self):
         body = getLinks.myReqGet(self._lg.base_url)
@@ -64,11 +61,12 @@ class Puller(modBase.Puller):
         this_url: str
         domain: str
         print(f"* 下载链接:", this_url)
-        video_list_str = urlGetToStr(self._dldPool, this_url)
+        video_list_str = urlGetToStr(this_url)
         _decode_url = domain
         videos_list = tsDecode.decoder(video_list_str, _decode_url)
         for i in range(len(videos_list)):
-            videos_list[i] = domain + videos_list[i]
+            if len(domain_re.findall(videos_list[i])) == 0:
+                videos_list[i] = domain + videos_list[i]
         print(f"* 视频时长:", time.strftime("%H:%M:%S", time.gmtime(tsDecode.videoLen(video_list_str, _decode_url))))
         return {
             "list": videos_list,

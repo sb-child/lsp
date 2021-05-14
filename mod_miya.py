@@ -1,7 +1,6 @@
 # Miya: 蜜芽
 # 视频拉取模块
 import bs4
-import urllib3
 import getLinks
 import getVideoLink
 import decryptLink
@@ -18,7 +17,6 @@ class Puller(modBase.Puller):
         self._name("Miya")
         self._lg = getLinks.GetterMiya()
         self._dl = decryptLink.Decrypter()
-        self._dldPool = urllib3.PoolManager()
         self._tagName = ""
 
     def _getTags(self):
@@ -50,7 +48,7 @@ class Puller(modBase.Puller):
         this_link = getVideoLink.getLink(link_url[0])
         this_url = self._dl.decrypt(this_link)
         print(f"* 下载链接:", this_url)
-        video_list_str = urlGetToStr(self._dldPool, this_url)
+        video_list_str = urlGetToStr(this_url)
         videos_list = tsDecode.decoder(video_list_str)
         print(f"* 视频时长:", time.strftime("%H:%M:%S", time.gmtime(tsDecode.videoLen(video_list_str))))
         return {

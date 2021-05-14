@@ -1,9 +1,6 @@
 import re
-import urllib3
-import decryptLink
-import getLinks
 
-domain_re = re.compile(r'(https://.*?)/')
+domain_re = re.compile(r'(http[s]?://.*?)/')
 link_re = re.compile(r'"url":"(.*?)"')
 tag_re = re.compile(r'/index\.php/vod/type/id/(.*?).html')
 
