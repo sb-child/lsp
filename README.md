@@ -26,7 +26,7 @@
 
 > `--not-download` 仅拉取视频列表, 不下载
 
-> linux用户: `python3 test2.py --mod 模块`  
+> linux用户: `python3 modRun.py --mod 模块`  
 > windows用户: 运行 `modRunMiya.cmd` 或 `modRunYysp.cmd`
 
 [comment]: <> (## \[推荐\] 全自动下载)
