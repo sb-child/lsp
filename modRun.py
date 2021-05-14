@@ -6,7 +6,7 @@ import downloader
 import argparse
 
 
-def main(selected_mod: str, dld_dir: list, tags: bool, tag: list, no_dld: bool):
+def main(selected_mod: str, dld_dir: list, tags: bool, tag: str, no_dld: bool):
     if selected_mod == "miya":
         mod = mod_miya.Puller()
     elif selected_mod == "yysp":
@@ -15,11 +15,12 @@ def main(selected_mod: str, dld_dir: list, tags: bool, tag: list, no_dld: bool):
         raise Exception("找不到模块")
     if tags:
         mod.getTags()
-        for i, i1 in mod.lastTags.items():
-            print(f"标签编号[{i}], 标签名[{i1}]")
+        for i in range(len(mod.lastTags)):
+            j = mod.lastTags[i]
+            print(f"标签编号[{j[0]}], 标签名[{j[1]}]")
         return 0
     if tag is not None:
-        mod.setTag(tag[0])
+        mod.setTag(tag)
     videos_dir = ""
     if not no_dld:
         videos_dir = "videos_auto_" + str(int(time.time())) if dld_dir is None else dld_dir[0]
@@ -50,4 +51,6 @@ if __name__ == '__main__':
     args = parser.parse_args()
     # print(args)
     # exit()
-    main(args.mod[0], args.dir, args.tags, args.tag, args.no_dld)
+    if args.tag is None:
+        args.tag = [""]
+    main(args.mod[0], args.dir, args.tags, args.tag[0], args.no_dld)

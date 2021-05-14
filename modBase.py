@@ -1,5 +1,4 @@
 import re
-
 import urllib3
 import decryptLink
 import getLinks
