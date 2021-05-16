@@ -70,12 +70,12 @@ def downloadM3u8(link: dict[str, Union[str, list[str], tuple[str, str, str], flo
         urlGetToBinFile(video_encrypt, fn_key)
         with open(fn_dec_m3u8, "w") as f:
             f.write(f"""
-            #EXTM3U
-            #EXT-X-VERSION:3
-            #EXT-X-MEDIA-SEQUENCE:0
-            #EXT-X-KEY:METHOD=AES-128,URI="{fn_key}"
-            #EXTINF:{'{:.6f}'.format(video_len)},
-            {fn}
+#EXTM3U
+#EXT-X-VERSION:3
+#EXT-X-MEDIA-SEQUENCE:0
+#EXT-X-KEY:METHOD=AES-128,URI="{os.path.split(fn_key)[-1]}"
+#EXTINF:{'{:.6f}'.format(video_len)},
+{os.path.split(fn)[-1]}
             """.strip())
         if subprocess.run(f"ffmpeg -allowed_extensions ALL "
                           f"-v 0 -y -i {fn_dec_m3u8} -c copy "
