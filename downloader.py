@@ -49,8 +49,8 @@ def downloadM3u8(link: dict,
     uid = uuid.uuid4().__str__()
 
     # debug: encrypt
-    if video_encrypt == "":
-        return 3
+    # if video_encrypt == "":
+    #     return 3
 
     for i in tqdm(range(videos_list_len), desc="下载视频"):
         dld_url = videos_list[i]
