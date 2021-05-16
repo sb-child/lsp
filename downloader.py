@@ -39,15 +39,16 @@ def downloadVideoPart(dld_url: str, filename: str):
     urlGetToBinFile(dld_url, filename)
 
 
-def downloadM3u8(link: dict[str, Union[str, list[str], tuple[str, str, str], float]],
+# def downloadM3u8(link: dict[str, Union[str, list[str], tuple[str, str, str], float]],
+def downloadM3u8(link: dict,
                  out_dir: str, out_file: str):
     videos_list = link["list"]
     link_url = link["links"]
     video_encrypt: str = link["encrypt"]
-    video_len: float = link["len"]
     videos_list_len = len(videos_list)
     uid = uuid.uuid4().__str__()
 
+    # debug: encrypt
     if video_encrypt == "":
         return 3
 

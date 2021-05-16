@@ -1,3 +1,5 @@
+from typing import Union
+
 import bs4
 import re
 import requests
@@ -10,7 +12,8 @@ def myReqGet(url: str):
                         ).text
 
 
-def linkFormat(link: tuple[str, str, str]):
+# def linkFormat(link: tuple[str, str, str]):
+def linkFormat(link: Union[list, tuple]):
     return f"* 网页链接: {link[0]}\n" \
            f"* 标题: {link[1]}\n" \
            f"* 封面链接: {link[2]}"

@@ -9,10 +9,13 @@
 
 > linux用户:
 ```shell
+# python3
 pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying --user
 pip3 uninstall pycrypto
 pip3 uninstall pycryptodome
 pip3 install pycryptodome
+# pypy3
+pip3 install requests beautifulsoup4 lxml pycryptodome tqdm retrying --user
 ```
 > windows用户: 运行 `init.cmd`
 

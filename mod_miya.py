@@ -56,7 +56,6 @@ class Puller(modBase.Puller):
             "list": videos_list,
             "links": link_url,
             "encrypt": "",
-            "len": video_len,
         }
 
 

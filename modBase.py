@@ -19,8 +19,10 @@ class Puller:
         self.modName = ""
         self._init()
         # self.log("载入模块...")
-        self.lastLinks: list[tuple[str, str, str]] = []
-        self.lastTags: dict[str, str] = {}
+        # self.lastLinks: list[tuple[str, str, str]] = []
+        # self.lastTags: dict[str, str] = {}
+        self.lastLinks = []
+        self.lastTags = {}
         self.selectedTag = ""
         self.log("模块已准备就绪.")
 
@@ -49,7 +51,8 @@ class Puller:
         self._fetch()
         self.log(f"视频列表拉取完成, 共[{len(self.lastLinks)}]个.")
 
-    def _getDownloadLink(self, index: int) -> dict[str, tuple[str, str, str]]:
+    # def _getDownloadLink(self, index: int) -> dict[str, tuple[str, str, str]]:
+    def _getDownloadLink(self, index: int) -> dict:
         pass
 
     def getDownloadLink(self, index: int):
