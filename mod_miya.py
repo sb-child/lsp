@@ -50,10 +50,13 @@ class Puller(modBase.Puller):
         print(f"* 下载链接:", this_url)
         video_list_str = urlGetToStr(this_url)
         videos_list = tsDecode.decoder(video_list_str)
-        print(f"* 视频时长:", time.strftime("%H:%M:%S", time.gmtime(tsDecode.videoLen(video_list_str))))
+        video_len: float = tsDecode.videoLen(video_list_str)
+        print(f"* 视频时长:", time.strftime("%H:%M:%S", time.gmtime(video_len)))
         return {
             "list": videos_list,
             "links": link_url,
+            "encrypt": "",
+            "len": video_len,
         }
 
 

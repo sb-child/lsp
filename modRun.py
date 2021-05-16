@@ -17,9 +17,8 @@ def main(selected_mod: str, dld_dir: list, tags: bool, tag: str, no_dld: bool):
         raise Exception("找不到模块")
     if tags:
         mod.getTags()
-        for i in range(len(mod.lastTags)):
-            j = mod.lastTags[i]
-            print(f"标签编号[{j[0]}], 标签名[{j[1]}]")
+        for i, j in mod.lastTags.items():
+            print(f"标签编号[{i}], 标签名[{j}]")
         return 0
     if tag != "":
         mod.setTag(tag)

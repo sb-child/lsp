@@ -67,10 +67,15 @@ class Puller(modBase.Puller):
         for i in range(len(videos_list)):
             if len(domain_re.findall(videos_list[i])) == 0:
                 videos_list[i] = domain + videos_list[i]
-        print(f"* 视频时长:", time.strftime("%H:%M:%S", time.gmtime(tsDecode.videoLen(video_list_str, _decode_url))))
+        video_len: float = tsDecode.videoLen(video_list_str, _decode_url)
+        print(f"* 视频时长:", time.strftime("%H:%M:%S", time.gmtime(video_len)))
+        encrypt = tsDecode.checkEncrypt(video_list_str, _decode_url)
+        print(f"* 密钥: [{encrypt if encrypt != '' else '无需解密'}]")
         return {
             "list": videos_list,
             "links": link_url,
+            "encrypt": encrypt,
+            "len": video_len,
         }
 
 

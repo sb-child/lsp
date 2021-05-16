@@ -1,5 +1,6 @@
 # 下载模块
 import os
+import shutil
 import subprocess
 import uuid
 import retrying
@@ -38,10 +39,12 @@ def downloadVideoPart(dld_url: str, filename: str):
     urlGetToBinFile(dld_url, filename)
 
 
-def downloadM3u8(link: dict[str, Union[list[str], tuple[str, str, str]]],
+def downloadM3u8(link: dict[str, Union[str, list[str], tuple[str, str, str], float]],
                  out_dir: str, out_file: str):
     videos_list = link["list"]
     link_url = link["links"]
+    video_encrypt: str = link["encrypt"]
+    video_len: float = link["len"]
     videos_list_len = len(videos_list)
     uid = uuid.uuid4().__str__()
     for i in tqdm(range(videos_list_len), desc="下载视频"):
@@ -59,6 +62,31 @@ def downloadM3u8(link: dict[str, Union[list[str], tuple[str, str, str]]],
         with open(fn, "ab+") as f:
             f.write(data)
         os.remove(fn2)
+    if video_encrypt != "":
+        print("解密视频, 这通常需要很长时间...")
+        fn_key = os.path.join(out_dir, f"t_key_{uid}.key")
+        fn_dec_m3u8 = os.path.join(out_dir, f"t_dec_{uid}.m3u8")
+        fn_dec_out = os.path.join(out_dir, f"t_dec_out_{uid}.ts")
+        urlGetToBinFile(video_encrypt, fn_key)
+        with open(fn_dec_m3u8, "w") as f:
+            f.write(f"""
+            #EXTM3U
+            #EXT-X-VERSION:3
+            #EXT-X-MEDIA-SEQUENCE:0
+            #EXT-X-KEY:METHOD=AES-128,URI="{fn_key}"
+            #EXTINF:{'{:.6f}'.format(video_len)},
+            {fn}
+            """.strip())
+        if subprocess.run(f"ffmpeg -allowed_extensions ALL "
+                          f"-v 0 -y -i {fn_dec_m3u8} -c copy "
+                          f"{fn_dec_out}", shell=True).returncode != 0:
+            print("解密时出错.")
+            return 2
+        os.remove(fn_key)
+        os.remove(fn)
+        shutil.move(fn_dec_out, fn)
+        print("解密完成.")
+
     print("转换为mp4格式...")
     fn3 = os.path.join(out_dir, f"{out_file}.mp4")
     if subprocess.run(f"ffmpeg -v 0 -y -i {fn} -c copy {fn3}", shell=True).returncode != 0:
