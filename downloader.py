@@ -4,9 +4,10 @@ import subprocess
 import uuid
 import retrying
 import requests
-from typing import Union
+from multiprocessing import Pool
 from tqdm import tqdm
 from Crypto.Cipher import AES
+from functools import partial
 
 
 def urlGet(url: str):
@@ -39,6 +40,16 @@ def downloadVideoPart(dld_url: str, filename: str):
     urlGetToBinFile(dld_url, filename)
 
 
+def _decrypt(enc_str: str, file: str):
+    with open(file, "rb") as f:
+        data = f.read()
+    keyBin = enc_str.encode()
+    aesDec = AES.new(keyBin, AES.MODE_CBC, keyBin)
+    data = aesDec.decrypt(data)
+    with open(file, "ab+") as f:
+        f.write(data)
+
+
 # def downloadM3u8(link: dict[str, Union[str, list[str], tuple[str, str, str], float]],
 def downloadM3u8(link: dict,
                  out_dir: str, out_file: str):
@@ -60,16 +71,20 @@ def downloadM3u8(link: dict,
         except Exception:
             raise ConnectionError("多次下载失败, 放弃.")
 
+    if video_encrypt != "":
+        print("使用多进程解密视频...")
+        keyStr = urlGetToStr(video_encrypt)
+        decPool = Pool()
+        fn_list = [os.path.join(out_dir, f"t_{uid}_{i}.ts") for i in range(videos_list_len)]
+        _decrypt_with_key = partial(_decrypt, keyStr)
+        decPool.map(_decrypt_with_key, fn_list)
+        print("解密完成")
+
     fn = os.path.join(out_dir, f"t2_{uid}.ts")
     for i in tqdm(range(videos_list_len), desc="合并视频"):
         fn2 = os.path.join(out_dir, f"t_{uid}_{i}.ts")
         with open(fn2, "rb") as f:
             data = f.read()
-        if video_encrypt != "":
-            keyStr = urlGetToStr(video_encrypt)
-            keyBin = keyStr.encode()
-            aesDec = AES.new(keyBin, AES.MODE_CBC, keyBin)
-            data = aesDec.decrypt(data)
         with open(fn, "ab+") as f:
             f.write(data)
         os.remove(fn2)
