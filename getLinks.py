@@ -92,8 +92,10 @@ class GetterYysp:
             else:
                 refresh_url: str = refresh_ele.attrs["content"]
                 # 0.1;URL=http://www.yyspzy5.xyz
-                selected_domain = refresh_url[7:]
+                selected_domain = refresh_url[8:]
+                selected_domain = selected_domain.replace("http", "https")
                 print(f"跳转到[{selected_domain}]")
+                break
         if selected_domain == "":
             print("-> 找不到可用的域名.")
             raise ConnectionError("找不到可用的域名")
