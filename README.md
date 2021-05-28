@@ -47,5 +47,7 @@ pypy3 -m pip install requests beautifulsoup4 lxml pycryptodome tqdm retrying --u
 + `tsDecode.py` 组件: m3u8列表解码器
 
 # todo
+
+[comment]: <> (+ `miya` 最近更换了域名..)
 + 尝试适配其他网站  
 + 链接数据库, 用于去重
