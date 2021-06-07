@@ -12,7 +12,7 @@ from functools import partial
 
 def urlGet(url: str):
     try:
-        req = requests.get(url, timeout=5)
+        req = requests.get(url, timeout=30)
         if req.status_code != 200:
             raise ConnectionError("请求返回值 != 200")
     except Exception as e:

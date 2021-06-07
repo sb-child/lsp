@@ -4,6 +4,7 @@ import bs4
 import re
 import requests
 import random
+import jsDecrypt
 
 
 def myReqGet(url: str):
@@ -21,10 +22,16 @@ def linkFormat(link: Union[list, tuple]):
 
 class GetterMiya:
     def __init__(self):
-        # print("-> 访问[miyajump.xyz]以获取链接...")
-        # pg = myReqGet("http://miyajump.xyz/?url=webjump")
-        # url1 = re.search("http://www.*.com/", pg)[0]
-        url1 = "http://www.my1152.com/"
+        if jsDecrypt.checkJsDec() != 0:
+            print("加载js解密模块失败")
+            raise FileNotFoundError("找不到解密模块")
+        print("-> 访问[miyajump.xyz]以获取链接...")
+        pg = myReqGet("http://miyajump.xyz/?url=webjump")
+        page = bs4.BeautifulSoup(pg, "lxml")
+        pg = str(page.find("script").string)
+        pg = jsDecrypt.dec(pg)
+        url1 = re.search("http://www.*.com/", pg)[0]
+        # url1 = "http://www.my1152.com/"
         print(f"-> 得到跳转页链接[{url1}].正在获取主页链接...")
         pg = myReqGet(f"{url1}?u={random.random()}&path=null")
         url_header_index = pg.find("'h'+'t'+'t'+'p'+'s'")
