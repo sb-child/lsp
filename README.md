@@ -10,6 +10,9 @@
 + + 注意: 在安装界面勾选 `c++ 生成工具` 组件
 + + 若安装失败, 可考虑使用`虚拟机`, `git bash`或者`linux子系统`运行此项目
 
++ 安装 [jsdec-tiny](https://github.com/sb-child/jsdec-tiny) 插件  
+  按照readme编译完成后, 将其`build`目录下的文件复制到本项目的`jsdec-tiny`目录下(若没有此目录, 可手动创建)
+
 + linux用户:
 ```shell
 # python3
