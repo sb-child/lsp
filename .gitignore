@@ -129,3 +129,6 @@ dmypy.json
 .pyre/
 /jsdec-tiny/main
 /jsdec-tiny/dec.js
+/v_auto_*
+/videos_*
+/videos
