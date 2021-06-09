@@ -4,6 +4,7 @@ import subprocess
 import uuid
 import retrying
 import requests
+import videoLock
 from multiprocessing import Pool
 from tqdm import tqdm
 from Crypto.Cipher import AES
@@ -12,11 +13,14 @@ from functools import partial
 
 def urlGet(url: str):
     try:
-        req = requests.get(url, timeout=30)
+        req = requests.get(url,
+                           headers={
+                               "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/83.0"},
+                           timeout=30)
         if req.status_code != 200:
-            raise ConnectionError("请求返回值 != 200")
+            raise ConnectionError(f"请求返回值 {req.status_code} != 200")
     except Exception as e:
-        print(f"* 下载[{url}]时抛出异常:", e)
+        print(f"* 下载[{url}]时抛出异常:")
         raise e
     return req.content
 
@@ -52,24 +56,45 @@ def _decrypt(enc_str: str, file: str):
 
 # def downloadM3u8(link: dict[str, Union[str, list[str], tuple[str, str, str], float]],
 def downloadM3u8(link: dict,
-                 out_dir: str, out_file: str):
+                 out_dir: str, out_file: str, restore=False):
     videos_list = link["list"]
     link_url = link["links"]
     video_encrypt: str = link["encrypt"]
     videos_list_len = len(videos_list)
     uid = uuid.uuid4().__str__()
 
-    # debug: encrypt
-    # if video_encrypt == "":
-    #     return 3
+    def myLockSet(x: dict):
+        videoLock.lockSet(out_dir, x)
+
+    def myLockGet():
+        return videoLock.lockGet(out_dir)
+
+    lastLock = myLockGet()
+    # 还未开始下载
+    downloadProgress = 0
+    if restore and "stat" in lastLock and lastLock["stat"] == 1:
+        # 上次没有下载完成
+        downloadProgress = lastLock["progress"]
+        uid = lastLock["of"]
 
     for i in tqdm(range(videos_list_len), desc="下载视频"):
+        if restore and i < downloadProgress:
+            # 跳过之前下载过的
+            continue
         dld_url = videos_list[i]
         fn = os.path.join(out_dir, f"t_{uid}_{i}.ts")
         try:
             downloadVideoPart(dld_url=dld_url, filename=fn)
-        except Exception:
-            raise ConnectionError("多次下载失败, 放弃.")
+        except KeyboardInterrupt:
+            exit(1)
+        except Exception as e:
+            print(e)
+            print("多次下载失败, 放弃本次下载.")
+            # 将跳过未下载完成的
+            myLockSet({})
+            return 2
+
+        myLockSet({"stat": 1, "of": uid, "progress": i})
 
     if video_encrypt != "":
         print("使用多进程解密视频...")
@@ -106,3 +131,6 @@ def downloadM3u8(link: dict,
         f.write("\n".join(link_url))
 
     print("完成.")
+    # 下载完成, 重置lock
+    myLockSet({})
+    return 0
