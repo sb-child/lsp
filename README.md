@@ -4,6 +4,8 @@
 + miya(蜜芽)
 + yysp(夜夜视频)
 
+### 喜欢本项目? 不妨点个star.
+
 # 安装依赖
 + 需要事先安装python和ffmpeg, windows用户需要配置环境变量.
 + 同时, windows用户需要安装 [vsBuildTools](https://visualstudio.microsoft.com/zh-hans/thank-you-downloading-visual-studio/?sku=Community&rel=15#) 以安装`pycrypto`库  
@@ -27,18 +29,35 @@ pypy3 -m pip install requests beautifulsoup4 lxml pycryptodome tqdm retrying --u
 
 # 获取视频
 ## 通过命令行工具下载视频
-+ `modRun.py` 命令行参数:
-+ `--mod 模块名` 指定要加载的模块
-+ + 可用模块:
-+ + `miya` \(`蜜芽`\)
-+ + `yysp` \(`夜夜視頻資源站`\)
-+ `--dir 目录名` 指定下载目录(可选)  
-+ `--tags` 获取当前模块中, 全部可用的标签
-+ `--tag 标签编号` 指定标签(编号), 否则为默认
-+ `--not-download` 仅拉取视频列表, 不下载
-+
-+ linux用户: `python3 modRun.py --mod 模块 [其他参数]`  
-+ windows用户: 运行 `modRunMiya.cmd` 或 `modRunYysp.cmd`, 也可自己在cmd中输入命令来使用其他功能
+`modRun.py` 命令行参数:  
+`--mod 模块名` 指定要加载的模块:  
+### 可用模块:
+`miya` \(`蜜芽`\)  
+`yysp` \(`夜夜視頻資源站`\)  
+  
+`--dir 目录名` 指定下载目录(可选)  
+`--tags` 获取当前模块中, 全部可用的标签  
+`--tag 标签编号` 指定标签(编号), 否则为默认  
+`--not-download` 仅拉取视频列表, 不下载  
+linux用户: `python3 modRun.py --mod 模块 [其他参数]`  
+windows用户: 运行 `modRunMiya.cmd` 或 `modRunYysp.cmd`, 也可自己在cmd中输入命令来使用其他功能
+
+# 特性: 断点下载
+下载中断后, 下次执行时只需在命令行中指定上次的下载目录即可  
+例子:  
+```
+$ python3 modRun.py --mod miya
+视频将下载到[xxx]目录
+...
+下载视频0...
+# 当脚本获取完链接或者下载时, 结束脚本进程
+^C
+$ python3 modRun.py --mod miya --dir xxx
+上次的下载未完成, 将从上次的进度下载:
+* 当前进度: 视频xxx / xxx
+* 下载失败: 视频[xxx]
+# 此时, 脚本将自动从上次的进度开始下载
+```
 
 # 文件描述
 + `modRun.py` 模块启动器
@@ -50,7 +69,5 @@ pypy3 -m pip install requests beautifulsoup4 lxml pycryptodome tqdm retrying --u
 + `tsDecode.py` 组件: m3u8列表解码器
 
 # todo
-
-[comment]: <> (+ `miya` 最近更换了域名..)
 + 尝试适配其他网站  
 + 链接数据库, 用于去重

@@ -67,7 +67,6 @@ def main(selected_mod: str, dld_dir: list, tags: bool, tag: str, no_dld: bool):
     if not no_dld and not restore:
         videoLock.lockSet(videos_dir, {"videos": links, "progress": 0, "errors": []}, fn=lockFile)
     for i in range(link_len):
-
         link = links[i]
         if no_dld:
             continue
