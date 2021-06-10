@@ -21,6 +21,7 @@ def urlGet(url: str):
             raise ConnectionError(f"请求返回值 {req.status_code} != 200")
     except Exception as e:
         print(f"* 下载[{url}]时抛出异常:")
+        print(e)
         raise e
     return req.content
 
