@@ -1,13 +1,17 @@
 ---
 default:
-  services:
-  - python
   before_script:
-  - python3 -V
-  - pip install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying --user
-  - pip uninstall pycrypto
-  - pip uninstall pycryptodome
-  - pip install pycryptodome
+  - apt update
+  - apt install -y ca-certificates
+  - echo "IyDpu5jorqTms6jph4rkuobmupDnoIHplZzlg4/ku6Xmj5Dpq5ggYXB0IHVwZGF0ZSDpgJ/luqbvvIzlpoLmnInpnIDopoHlj6/oh6rooYzlj5bmtojms6jph4oKZGViIGh0dHBzOi8vb3BlbnR1bmEuY24vdWJ1bnR1LyBmb2NhbCBtYWluIHJlc3RyaWN0ZWQgdW5pdmVyc2UgbXVsdGl2ZXJzZQojIGRlYi1zcmMgaHR0cHM6Ly9vcGVudHVuYS5jbi91YnVudHUvIGZvY2FsIG1haW4gcmVzdHJpY3RlZCB1bml2ZXJzZSBtdWx0aXZlcnNlCmRlYiBodHRwczovL29wZW50dW5hLmNuL3VidW50dS8gZm9jYWwtdXBkYXRlcyBtYWluIHJlc3RyaWN0ZWQgdW5pdmVyc2UgbXVsdGl2ZXJzZQojIGRlYi1zcmMgaHR0cHM6Ly9vcGVudHVuYS5jbi91YnVudHUvIGZvY2FsLXVwZGF0ZXMgbWFpbiByZXN0cmljdGVkIHVuaXZlcnNlIG11bHRpdmVyc2UKZGViIGh0dHBzOi8vb3BlbnR1bmEuY24vdWJ1bnR1LyBmb2NhbC1iYWNrcG9ydHMgbWFpbiByZXN0cmljdGVkIHVuaXZlcnNlIG11bHRpdmVyc2UKIyBkZWItc3JjIGh0dHBzOi8vb3BlbnR1bmEuY24vdWJ1bnR1LyBmb2NhbC1iYWNrcG9ydHMgbWFpbiByZXN0cmljdGVkIHVuaXZlcnNlIG11bHRpdmVyc2UKZGViIGh0dHBzOi8vb3BlbnR1bmEuY24vdWJ1bnR1LyBmb2NhbC1zZWN1cml0eSBtYWluIHJlc3RyaWN0ZWQgdW5pdmVyc2UgbXVsdGl2ZXJzZQojIGRlYi1zcmMgaHR0cHM6Ly9vcGVudHVuYS5jbi91YnVudHUvIGZvY2FsLXNlY3VyaXR5IG1haW4gcmVzdHJpY3RlZCB1bml2ZXJzZSBtdWx0aXZlcnNlCgojIOmihOWPkeW4g+i9r+S7tua6kO+8jOS4jeW7uuiuruWQr+eUqAojIGRlYiBodHRwczovL29wZW50dW5hLmNuL3VidW50dS8gZm9jYWwtcHJvcG9zZWQgbWFpbiByZXN0cmljdGVkIHVuaXZlcnNlIG11bHRpdmVyc2UKIyBkZWItc3JjIGh0dHBzOi8vb3BlbnR1bmEuY24vdWJ1bnR1LyBmb2NhbC1wcm9wb3NlZCBtYWluIHJlc3RyaWN0ZWQgdW5pdmVyc2UgbXVsdGl2ZXJzZQoK" | base64 -d | tee /etc/apt/sources.list
+  - apt update
+  - apt install -y python3 python3-pip
+  - python3 -m pip install --upgrade pip
+  - pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
+  - pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying --user
+  - pip3 uninstall pycrypto
+  - pip3 uninstall pycryptodome
+  - pip3 install pycryptodome
 stages:
 - ".pre"
 - test_websites_basic
@@ -15,8 +19,8 @@ stages:
 job 测试miya模块的访问:
   stage: test_websites_basic
   script:
-  - python modRun.py --mod miya --tags
+  - python3 modRun.py --mod miya --tags
 job 测试yysp模块的访问:
   stage: test_websites_basic
   script:
-  - python modRun.py --mod yysp --tags
+  - python3 modRun.py --mod yysp --tags
