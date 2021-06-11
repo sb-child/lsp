@@ -9,8 +9,8 @@ default:
   - python3 -m pip install --upgrade pip
   - pip3 config set global.index-url https://pypi.tuna.tsinghua.edu.cn/simple
   - pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying --user
-  - pip3 uninstall pycrypto
-  - pip3 uninstall pycryptodome
+  # - pip3 uninstall pycrypto
+  # - pip3 uninstall pycryptodome
   - pip3 install pycryptodome
 stages:
 - ".pre"
