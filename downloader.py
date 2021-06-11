@@ -41,7 +41,7 @@ def on_err(attempts, delay):
 
 @retrying.retry(stop_max_attempt_number=10, wait_random_min=5000,
                 wait_random_max=10000, wait_incrementing_increment=0, stop_func=on_err)
-def downloadVideoPart(dld_url: str, filename: str):
+def downloadWithRetry(dld_url: str, filename: str):
     urlGetToBinFile(dld_url, filename)
 
 
@@ -85,7 +85,7 @@ def downloadM3u8(link: dict,
         dld_url = videos_list[i]
         fn = os.path.join(out_dir, f"t_{uid}_{i}.ts")
         try:
-            downloadVideoPart(dld_url=dld_url, filename=fn)
+            downloadWithRetry(dld_url=dld_url, filename=fn)
         except KeyboardInterrupt:
             exit(1)
         except Exception as e:
@@ -124,7 +124,7 @@ def downloadM3u8(link: dict,
 
     print("下载封面...")
     fn_img = os.path.join(out_dir, f"{out_file}.jpg")
-    urlGetToBinFile(link_url[2], fn_img)
+    downloadWithRetry(link_url[2], fn_img)
 
     print("写出描述文件...")
     fn_desc = os.path.join(out_dir, f"{out_file}.txt")
