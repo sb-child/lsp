@@ -3,6 +3,7 @@ default:
   services:
   - python
   before_script:
+  - python -V
   - pip install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying --user
   - pip uninstall pycrypto
   - pip uninstall pycryptodome
