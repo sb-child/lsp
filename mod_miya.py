@@ -49,7 +49,7 @@ class Puller(modBase.Puller):
         this_url = self._dl.decrypt(this_link)
         print(f"* 下载链接:", this_url)
         video_list_str = urlGetToStr(this_url)
-        videos_list = tsDecode.decoder(video_list_str)
+        videos_list, _ = tsDecode.decoder(video_list_str)
         video_len: float = tsDecode.videoLen(video_list_str)
         print(f"* 视频时长:", time.strftime("%H:%M:%S", time.gmtime(video_len)))
         return {

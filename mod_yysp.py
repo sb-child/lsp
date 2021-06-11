@@ -64,19 +64,13 @@ class Puller(modBase.Puller):
         domain: str
         print(f"* 下载链接:", this_url)
         video_list_str = urlGetToStr(this_url)
-        _decode_url = domain
-        _url_prefix = this_url[0:(this_url.rfind("/") + 1)]
-        videos_list = tsDecode.decoder(video_list_str, _decode_url)
-        for i in range(len(videos_list)):
-            if len(domain_re.findall(videos_list[i])) == 0:
-                videos_list[i] = _url_prefix + videos_list[i]
+        _decode_url = this_url[0:(this_url.rfind("/") + 1)]
+        videos_list, _ = tsDecode.decoder(video_list_str, _decode_url)
         video_len: float = tsDecode.videoLen(video_list_str, _decode_url)
         print(f"* 视频时长:", time.strftime("%H:%M:%S", time.gmtime(video_len)))
         encrypt: str = tsDecode.checkEncrypt(video_list_str, _decode_url)
-        if len(domain_re.findall(encrypt)) == 0:
-            encrypt = _url_prefix + encrypt
         print(f"* 密钥: [{encrypt if encrypt != '' else '无需解密'}]")
-        # print(videos_list, encrypt)
+        print(videos_list, encrypt)
         return {
             "list": videos_list,
             "links": link_url,

@@ -17,12 +17,14 @@ def urlGet(url: str):
                            headers={
                                "User-Agent": "Mozilla/5.0 (X11; Linux x86_64; rv:81.0) Gecko/20100101 Firefox/83.0"},
                            timeout=30)
-        if req.status_code != 200:
-            raise ConnectionError(f"请求返回值 {req.status_code} != 200")
     except Exception as e:
         print(f"* 下载[{url}]时抛出异常:")
         print(e)
         raise e
+    if req.status_code != 200:
+        r = f"请求返回值 {req.status_code} != 200"
+        print(r)
+        raise ConnectionError(r)
     return req.content
 
 
