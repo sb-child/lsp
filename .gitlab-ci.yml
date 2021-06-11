@@ -1,0 +1,21 @@
+---
+default:
+  services:
+  - python
+  before_script:
+  - pip install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying --user
+  - pip uninstall pycrypto
+  - pip uninstall pycryptodome
+  - pip install pycryptodome
+stages:
+- ".pre"
+- test_websites_basic
+- ".post"
+job 测试miya模块的访问:
+  stage: test_websites_basic
+  script:
+  - python modRun.py --mod miya --tags
+job 测试yysp模块的访问:
+  stage: test_websites_basic
+  script:
+  - python modRun.py --mod yysp --tags
