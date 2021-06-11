@@ -2,6 +2,7 @@ import re
 
 domain_re = re.compile(r'(http[s]?://.*?)/')
 link_re = re.compile(r'"url":"(.*?)"')
+link2_re = re.compile(r'm3u8url = \'(.*?)\'')
 tag_re = re.compile(r'/index\.php/vod/type/id/(.*?).html')
 
 

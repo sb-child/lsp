@@ -49,13 +49,14 @@ def _decrypt(enc_str: str, file: str):
     with open(file, "rb") as f:
         data = f.read()
     keyBin = enc_str.encode()
+    # print(keyBin)
     aesDec = AES.new(keyBin, AES.MODE_CBC, keyBin)
     data = aesDec.decrypt(data)
     with open(file, "ab+") as f:
         f.write(data)
 
 
-# def downloadM3u8(link: dict[str, Union[str, list[str], tuple[str, str, str], float]],
+# def downloadM3u8(link: dict[str, Union[str, list[str], tuple[str, str, str], float]]len(domain_re.findall(videos_list[i])) == 0,
 def downloadM3u8(link: dict,
                  out_dir: str, out_file: str, restore=False):
     videos_list = link["list"]

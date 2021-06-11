@@ -10,21 +10,23 @@ from downloader import urlGetToStr
 
 domain_re = modBase.domain_re
 link_re = modBase.link_re
+link2_re = modBase.link2_re
 tag_re = modBase.tag_re
 
 
 def _decoder(url: str):
     # 多视频来源解码
-    new_domain: str = domain_re.findall(url)[0]
+    new_domain: str = domain_re.findall(url)[0] + "/"
     if url.endswith(".m3u8"):
         # 不需要处理
         return url, new_domain
     result = getLinks.myReqGet(url)
-    # https://vip4.ddyunbo.com
-    new_dir = link_re.findall(result)[0]
-    new_url = new_domain + new_dir
-    # var playlist = '[{"url":"/20210501/ItF819cE/600kb/hls/index.m3u8"}]';
-    return new_url, new_domain
+    try:
+        new_dir: str = link_re.findall(result)[0]
+        new_dir = new_domain + new_dir
+    except IndexError:
+        new_dir: str = link2_re.findall(result)[0]
+    return new_dir, new_domain
 
 
 class Puller(modBase.Puller):
@@ -63,20 +65,23 @@ class Puller(modBase.Puller):
         print(f"* 下载链接:", this_url)
         video_list_str = urlGetToStr(this_url)
         _decode_url = domain
+        _url_prefix = this_url[0:(this_url.rfind("/") + 1)]
         videos_list = tsDecode.decoder(video_list_str, _decode_url)
         for i in range(len(videos_list)):
             if len(domain_re.findall(videos_list[i])) == 0:
-                videos_list[i] = domain + videos_list[i]
+                videos_list[i] = _url_prefix + videos_list[i]
         video_len: float = tsDecode.videoLen(video_list_str, _decode_url)
         print(f"* 视频时长:", time.strftime("%H:%M:%S", time.gmtime(video_len)))
-        encrypt = tsDecode.checkEncrypt(video_list_str, _decode_url)
+        encrypt: str = tsDecode.checkEncrypt(video_list_str, _decode_url)
+        if len(domain_re.findall(encrypt)) == 0:
+            encrypt = _url_prefix + encrypt
         print(f"* 密钥: [{encrypt if encrypt != '' else '无需解密'}]")
+        # print(videos_list, encrypt)
         return {
             "list": videos_list,
             "links": link_url,
             "encrypt": encrypt,
         }
-
 
 # a = Puller()
 # a.getTags()
