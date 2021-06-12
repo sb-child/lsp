@@ -37,6 +37,16 @@ def urlGetToStr(url, encoding="utf-8"):
     return urlGet(url).decode(encoding)
 
 
+def on_get_err(attempts, delay):
+    print("获取失败, 稍后重试...")
+
+
+@retrying.retry(stop_max_attempt_number=10, wait_random_min=5000,
+                wait_random_max=10000, wait_incrementing_increment=0, stop_func=on_get_err)
+def urlGetToStrWithRetry(url, encoding="utf-8"):
+    return urlGetToStr(url, encoding)
+
+
 def on_err(attempts, delay):
     print("下载失败, 稍后重试...")
 
