@@ -6,7 +6,7 @@
 <h3>
 颜色网站视频爬取下载工具
 </h3>
-<div align='left'>
+<div align='center'>
 <h4>已适配网站列表</h4>
 <span>miya(蜜芽)</span>
 <span>yysp(夜夜视频)</span>
