@@ -1,3 +1,4 @@
+import pathlib
 import os
 import subprocess
 import base64
@@ -6,12 +7,11 @@ jsdec_dir = "jsdec-tiny"
 
 
 def checkJsDec():
-    dirs = os.listdir(".")
-    if jsdec_dir not in dirs:
+    dirs = pathlib.Path(jsdec_dir)
+    if not dirs.exists():
         print(f"jsDecrypt: 找不到 {jsdec_dir} 目录")
         return 1
-    dirs = os.listdir(jsdec_dir)
-    if "main" not in dirs and "main.exe" not in dirs:
+    if not (dirs / "main").exists() and not (dirs / "main.exe").exists():
         print(f"jsDecrypt: 找不到可执行文件")
         return 2
     return 0

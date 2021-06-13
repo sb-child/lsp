@@ -1,4 +1,4 @@
-import os
+import pathlib
 import time
 import mod_miya
 import mod_yysp
@@ -48,10 +48,7 @@ def main(selected_mod: str, dld_dir: list, tags: bool, tag: str, no_dld: bool):
                      "_" + \
                      str(int(time.time())) \
             if dld_dir is None else dld_dir[0]
-        try:
-            os.mkdir(videos_dir)
-        except FileExistsError:
-            pass
+        pathlib.Path(videos_dir).mkdir(exist_ok=True)
         print(f"视频将下载到[{videos_dir}]目录")
     if mod is not None:
         mod.fetch()
@@ -83,6 +80,8 @@ def main(selected_mod: str, dld_dir: list, tags: bool, tag: str, no_dld: bool):
         if r != 0:
             lk["errors"].append(i)
         videoLock.lockSet(videos_dir, lk, fn=lockFile)
+        # 下次不用恢复进度, 否则会导致临时文件名冲突
+        restore = False
     videoLock.lockSet(videos_dir, {}, fn=lockFile)
 
 

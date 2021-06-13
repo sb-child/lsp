@@ -1,5 +1,6 @@
 # 下载模块
-import os
+import pathlib
+import shutil
 import subprocess
 import uuid
 import retrying
@@ -57,7 +58,7 @@ def downloadWithRetry(dld_url: str, filename: str):
     urlGetToBinFile(dld_url, filename)
 
 
-def _decrypt(enc_str: str, file: str):
+def _decrypt(enc_str: str, file: pathlib.Path):
     with open(file, "rb") as f:
         data = f.read()
     keyBin = enc_str.encode()
@@ -92,13 +93,13 @@ def downloadM3u8(link: dict,
         uid = lastLock["of"]
 
     for i in tqdm(range(videos_list_len), desc="下载视频"):
-        if restore and i < downloadProgress:
-            # 跳过之前下载过的
-            continue
         dld_url = videos_list[i]
-        fn = os.path.join(out_dir, f"t_{uid}_{i}.ts")
+        fn = pathlib.Path(out_dir).joinpath(f"t_{uid}_{i}.ts")
+        # 跳过之前下载过的
+        if restore and i < downloadProgress and pathlib.Path(fn).exists():
+            continue
         try:
-            downloadWithRetry(dld_url=dld_url, filename=fn)
+            downloadWithRetry(dld_url=dld_url, filename=str(fn))
         except KeyboardInterrupt:
             exit(1)
         except Exception as e:
@@ -108,39 +109,41 @@ def downloadM3u8(link: dict,
             myLockSet({})
             return 2
 
-        myLockSet({"stat": 1, "of": uid, "progress": i})
-
     if video_encrypt != "":
         print("使用多进程解密视频...")
         keyStr = urlGetToStr(video_encrypt)
         decPool = Pool()
-        fn_list = [os.path.join(out_dir, f"t_{uid}_{i}.ts") for i in range(videos_list_len)]
+        fn_list = [pathlib.Path(out_dir).joinpath(f"t_{uid}_{i}.ts") for i in range(videos_list_len)]
         _decrypt_with_key = partial(_decrypt, keyStr)
-        decPool.map(_decrypt_with_key, fn_list)
+        try:
+            decPool.map(_decrypt_with_key, fn_list)
+        except ValueError:
+            print("解密失败: 密钥格式错误")
+            return 3
         print("解密完成")
 
-    fn = os.path.join(out_dir, f"t2_{uid}.ts")
+    fn = pathlib.Path(out_dir) / f"t2_{uid}.ts"
     for i in tqdm(range(videos_list_len), desc="合并视频"):
-        fn2 = os.path.join(out_dir, f"t_{uid}_{i}.ts")
+        fn2 = pathlib.Path(out_dir) / f"t_{uid}_{i}.ts"
         with open(fn2, "rb") as f:
             data = f.read()
         with open(fn, "ab+") as f:
             f.write(data)
-        os.remove(fn2)
+        fn2.unlink()
 
     print("转换为mp4格式...")
-    fn3 = os.path.join(out_dir, f"{out_file}.mp4")
+    fn3 = pathlib.Path(out_dir) / f"{out_file}.mp4"
     if subprocess.run(f"ffmpeg -v 0 -y -i {fn} -c copy {fn3}", shell=True).returncode != 0:
         print("格式转换时出错.")
         return 1
-    os.remove(fn)
+    fn.unlink()
 
     print("下载封面...")
-    fn_img = os.path.join(out_dir, f"{out_file}.jpg")
-    downloadWithRetry(link_url[2], fn_img)
+    fn_img = pathlib.Path(out_dir) / f"{out_file}.jpg"
+    downloadWithRetry(link_url[2], str(fn_img))
 
     print("写出描述文件...")
-    fn_desc = os.path.join(out_dir, f"{out_file}.txt")
+    fn_desc = pathlib.Path(out_dir) / f"{out_file}.txt"
     with open(fn_desc, "w") as f:
         f.write("\n".join(link_url))
 
