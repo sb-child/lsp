@@ -11,12 +11,13 @@
 <span>miya(蜜芽)</span>
 <span>yysp(夜夜视频)</span>
 </div>
-<br><br>
+<br><br><br>
 </div>
 
 ### 喜欢本项目? 不妨点个star~
 
 # 快速入手
++ 安卓手机用户, 可使用`termux`等终端模拟器, 按照linux用户的步骤部署环境并运行.
 + 需要事先安装`python 3.8+`和`ffmpeg`, windows用户需要配置环境变量.  
   [windows下,ffmpeg安装教程](https://bbs.huaweicloud.com/blogs/243409)  
   [python阿里镜像](https://npm.taobao.org/mirrors/python/)  
@@ -90,6 +91,9 @@ $# 此时, 脚本将自动从上次的进度开始下载
 + `tsDecode.py` 组件: m3u8列表解码器
 + `videoLock.py` 组件: 锁文件操作
 
-# todo
-+ 尝试适配其他网站  
-+ 链接数据库, 用于去重
+# 为此项目添砖加瓦
+### 你可以
++ 适配一个新网站
++ 修复一个bug
++ 添加新功能
++ 完善文档
