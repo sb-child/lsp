@@ -3,6 +3,8 @@ import pathlib
 import shutil
 import subprocess
 import uuid
+from typing import Union
+
 import retrying
 import requests
 import videoLock
@@ -58,7 +60,7 @@ def downloadWithRetry(dld_url: str, filename: str):
     urlGetToBinFile(dld_url, filename)
 
 
-def _decrypt(enc_str: str, file: pathlib.Path):
+def _decrypt(enc_str: str, file: Union[pathlib.Path, str]):
     with open(file, "rb") as f:
         data = f.read()
     keyBin = enc_str.encode()
@@ -115,11 +117,22 @@ def downloadM3u8(link: dict,
         decPool = Pool()
         fn_list = [pathlib.Path(out_dir).joinpath(f"t_{uid}_{i}.ts") for i in range(videos_list_len)]
         _decrypt_with_key = partial(_decrypt, keyStr)
+        unSupportFlag = False
         try:
             decPool.map(_decrypt_with_key, fn_list)
         except ValueError:
             print("解密失败: 密钥格式错误")
             return 3
+        except ImportError:
+            print("当前平台不支持多进程, 将降级为串行解密.")
+            unSupportFlag = True
+        if unSupportFlag:
+            try:
+                for i in fn_list:
+                    _decrypt(keyStr, i)
+            except ValueError:
+                print("解密失败: 密钥格式错误")
+                return 3
         print("解密完成")
 
     fn = pathlib.Path(out_dir) / f"t2_{uid}.ts"
