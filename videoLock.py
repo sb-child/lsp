@@ -1,10 +1,10 @@
-import hashlib
 import json
 import os
-import sqlite3
 
 
 def lockInit(d: str, fn="lsp.lock"):
+    if len(d) == 0:
+        return ""
     lockFileName = os.path.join(d, fn)
     try:
         os.mkdir(d)
@@ -27,6 +27,8 @@ def lockGet(d: str, fn="lsp.lock"):
 
 def lockSet(d: str, data: dict, fn="lsp.lock"):
     lockFileName = lockInit(d, fn)
+    if len(d) == 0:
+        return
     with open(lockFileName, "w") as f:
         json.dump(data, f)
 

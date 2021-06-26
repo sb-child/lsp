@@ -9,7 +9,7 @@ import random
 import string
 
 
-def main(selected_mod: str, dld_dir: list, tags: bool, tag: str, no_dld: bool):
+def main(selected_mod: str, dld_dir: list, tags: bool, tag: list, no_dld: bool):
     lockFile = "global_lsp.lock"
     lk = {}
     restore = False
@@ -37,7 +37,7 @@ def main(selected_mod: str, dld_dir: list, tags: bool, tag: str, no_dld: bool):
         for i, j in mod.lastTags.items():
             print(f"标签编号[{i}], 标签名[{j}]")
         return 0
-    if tag != "":
+    if len(tag) != 0:
         if restore:
             raise FileNotFoundError("当前模式下, 不能指定标签")
         mod.setTag(tag)
@@ -53,7 +53,6 @@ def main(selected_mod: str, dld_dir: list, tags: bool, tag: str, no_dld: bool):
     if mod is not None:
         mod.fetch()
         link_len = len(mod.lastLinks)
-        print(f"获取到{link_len}个视频")
         links = []
         for i in range(link_len):
             links.append(mod.getDownloadLink(i))
@@ -93,15 +92,15 @@ if __name__ == '__main__':
                         help='指定下载目录', type=str)
     parser.add_argument('--tags', dest='tags', action='store_true',
                         help='获取标签列表')
-    parser.add_argument('--tag', dest='tag', action='store', nargs=1,
-                        help='指定标签(编号), 否则为默认', type=str)
+    parser.add_argument('--tag', dest='tag', action='store', nargs='+',
+                        help='指定标签(编号), 否则为默认', type=int)
     parser.add_argument('--not-download', dest='no_dld', action='store_true',
                         help='仅拉取视频列表, 不下载')
     args = parser.parse_args()
     # print(args)
     # exit()
     if args.tag is None:
-        args.tag = [""]
+        args.tag = []
     if args.mod is None:
         args.mod = [""]
-    main(args.mod[0], args.dir, args.tags, args.tag[0], args.no_dld)
+    main(args.mod[0], args.dir, args.tags, args.tag, args.no_dld)

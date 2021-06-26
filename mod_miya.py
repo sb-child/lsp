@@ -1,5 +1,6 @@
 # Miya: 蜜芽
 # 视频拉取模块
+
 import bs4
 import getLinks
 import getVideoLink
@@ -7,6 +8,8 @@ import decryptLink
 import modBase
 import tsDecode
 import time
+
+from typing import Union
 from downloader import urlGetToStr
 
 tag_re = modBase.tag_re
@@ -33,14 +36,20 @@ class Puller(modBase.Puller):
             tags_list[tag_name[0]] = tag.text.strip()
         self.lastTags = tags_list
 
-    def _setTag(self, tag_name: str):
+    def _setTag(self, tag_name: list):
         self.selectedTag = tag_name
         self.log("获取标签列表以指定标签...")
         self._getTags()
-        self._tagName = self.lastTags[tag_name]
+        self._tagName = [self.lastTags[str(i)] for i in tag_name]
 
     def _fetch(self):
-        self.lastLinks = self._lg.run(tag=self._tagName)
+        if len(self._tagName) == 0:
+            self.lastLinks = self._lg.run()
+            return
+        temp = []
+        for i in self._tagName:
+            temp.extend(self._lg.run(tag=str(i)))
+        self.lastLinks = temp
 
     def _getDownloadLink(self, index: int):
         link_url = self.lastLinks[index]

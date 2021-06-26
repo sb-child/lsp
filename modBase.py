@@ -1,4 +1,5 @@
 import re
+from typing import Union
 
 domain_re = re.compile(r'(http[s]?://.*?)/')
 link_re = re.compile(r'"url":"(.*?)"')
@@ -24,7 +25,7 @@ class Puller:
         # self.lastTags: dict[str, str] = {}
         self.lastLinks = []
         self.lastTags = {}
-        self.selectedTag = ""
+        self.selectedTag = []
         self.log("模块已准备就绪.")
 
     def _getTags(self):
@@ -35,14 +36,16 @@ class Puller:
         self._getTags()
         self.log(f"分类列表拉取完成, 共[{len(self.lastTags)}]个.")
 
-    def _setTag(self, tag_name: str):
+    def _setTag(self, tag_name: list):
         pass
 
-    def setTag(self, tag_name: str):
+    def setTag(self, tag_name: Union[list, int]):
+        if isinstance(tag_name, int):
+            tag_name = [tag_name]
         self._setTag(tag_name=tag_name)
-        if tag_name == "":
+        if len(tag_name) == 0:
             self.log(f"切换到默认标签.")
-        self.log(f"指定标签[{tag_name}].")
+        self.log(f"指定标签[{','.join([str(i) for i in tag_name])}].")
 
     def _fetch(self):
         pass

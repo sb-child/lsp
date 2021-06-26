@@ -1,11 +1,14 @@
 # yysp: 夜夜視頻資源站
 # 视频拉取模块
+
 import time
 import bs4
 import getLinks
 import getVideoLink
 import tsDecode
 import modBase
+
+from typing import Union
 from downloader import urlGetToStr
 
 domain_re = modBase.domain_re
@@ -49,11 +52,18 @@ class Puller(modBase.Puller):
             # {"33": "..."}
         self.lastTags = tags_list
 
-    def _setTag(self, tag_name: str):
+    def _setTag(self, tag_name: list):
         self.selectedTag = tag_name
 
     def _fetch(self):
-        self.lastLinks = self._lg.run(tag=self.selectedTag)
+        if len(self.selectedTag) == 0:
+            self.lastLinks = self._lg.run()
+            return
+        temp = []
+        for i in self.selectedTag:
+            temp.extend(self._lg.run(tag=str(i)))
+        self.lastLinks = temp
+        # self.lastLinks = self._lg.run(tag=self.selectedTag)
 
     def _getDownloadLink(self, index: int):
         link_url = self.lastLinks[index]
