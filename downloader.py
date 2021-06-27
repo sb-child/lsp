@@ -1,13 +1,12 @@
 # 下载模块
 import pathlib
-import shutil
 import subprocess
 import uuid
-from typing import Union
-
 import retrying
 import requests
 import videoLock
+
+from typing import Union
 from multiprocessing import Pool
 from tqdm import tqdm
 from Crypto.Cipher import AES
