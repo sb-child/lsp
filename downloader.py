@@ -110,6 +110,7 @@ def downloadM3u8(link: dict,
             # 将跳过未下载完成的
             myLockSet({})
             return 2
+        myLockSet({"stat": 1, "of": uid, "progress": i})
 
     if video_encrypt != "":
         print("使用多进程解密视频...")
