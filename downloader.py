@@ -70,7 +70,8 @@ def _decrypt(enc_str: str, file: Union[pathlib.Path, str]):
         f.write(data)
 
 
-# def downloadM3u8(link: dict[str, Union[str, list[str], tuple[str, str, str], float]]len(domain_re.findall(videos_list[i])) == 0,
+# def downloadM3u8(link: dict[str, Union[str, list[str], tuple[str, str, str], float]], out_dir: str, out_file: str,
+# restore=False):
 def downloadM3u8(link: dict,
                  out_dir: str, out_file: str, restore=False):
     videos_list = link["list"]

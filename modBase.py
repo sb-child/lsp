@@ -62,6 +62,9 @@ class Puller:
     def getDownloadLink(self, index: int):
         self.log("获取下载链接...")
         r = self._getDownloadLink(index=index)
+        if "error" in r:
+            print("获取链接时出错:", r["error"])
+            return r
         self.log("获取完成.")
         '''
         list:

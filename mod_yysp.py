@@ -69,7 +69,15 @@ class Puller(modBase.Puller):
         link_url = self.lastLinks[index]
         print(f"视频{index}:\n" + getLinks.linkFormat(link_url))
         this_link = getVideoLink.getLink(link_url[0])
-        this_url, domain = _decoder(this_link)
+        try:
+            this_url, domain = _decoder(this_link)
+        except Exception as e:
+            return {
+                "error": str(e),
+                "list": [],
+                "links": ["-", "-", "-"],
+                "encrypt": False,
+            }
         this_url: str
         domain: str
         print(f"* 下载链接:", this_url)

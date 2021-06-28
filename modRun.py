@@ -11,7 +11,7 @@ import string
 
 def main(selected_mod: str, dld_dir: list, tags: bool, tag: list, no_dld: bool):
     lockFile = "global_lsp.lock"
-    lk = {}
+    lk = {"errors": []}
     restore = False
     if dld_dir is not None and not no_dld:
         lk: dict = videoLock.lockGet(dld_dir[0], fn=lockFile)
@@ -55,7 +55,10 @@ def main(selected_mod: str, dld_dir: list, tags: bool, tag: list, no_dld: bool):
         link_len = len(mod.lastLinks)
         links = []
         for i in range(link_len):
-            links.append(mod.getDownloadLink(i))
+            link = mod.getDownloadLink(i)
+            if "error" in link:
+                lk["errors"].append(i)
+            links.append(link)
         print("视频列表获取完成, 将下载视频")
     else:
         link_len = len(lk['videos'])
@@ -66,11 +69,11 @@ def main(selected_mod: str, dld_dir: list, tags: bool, tag: list, no_dld: bool):
         link = links[i]
         if no_dld:
             continue
+        if i in lk['errors']:
+            print(f"下载时出错过, 跳过视频{i}")
+            continue
         if restore and i < lk["progress"]:
             print(f"之前已经下载过, 跳过视频{i}")
-            continue
-        if restore and i in lk['errors']:
-            print(f"下载时出错过, 跳过视频{i}")
             continue
         print(f"下载视频{i}...")
         r = downloader.downloadM3u8(link=link, out_dir=videos_dir, out_file=f"out_{i}", restore=restore)
