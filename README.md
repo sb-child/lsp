@@ -18,7 +18,7 @@
 
 # 快速入手
 + 安卓手机用户, 可使用`termux`等终端模拟器, 按照linux用户的步骤部署环境并运行.
-  - 目前还不支持在手机端解密m3u8
+  - 将在手机端串行解密ts文件, 速度较慢
 + 需要事先安装`python 3.8+`和`ffmpeg`, windows用户需要配置环境变量.  
   [windows下,ffmpeg安装教程](https://bbs.huaweicloud.com/blogs/243409)  
   [python阿里镜像](https://npm.taobao.org/mirrors/python/)  

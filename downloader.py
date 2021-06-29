@@ -1,5 +1,6 @@
 # 下载模块
 import pathlib
+import platform
 import subprocess
 import uuid
 import retrying
@@ -118,22 +119,19 @@ def downloadM3u8(link: dict,
         decPool = Pool()
         fn_list = [pathlib.Path(out_dir).joinpath(f"t_{uid}_{i}.ts") for i in range(videos_list_len)]
         _decrypt_with_key = partial(_decrypt, keyStr)
-        unSupportFlag = False
+        mac = platform.machine()
+        unSupportFlag = True if (mac.find("arm") != -1 or mac.find("aarch") != -1) else False
+        if unSupportFlag:
+            print("当前平台不支持多进程, 将降级为串行解密.")
         try:
-            decPool.map(_decrypt_with_key, fn_list)
+            if unSupportFlag:
+                for i in fn_list:
+                    _decrypt(keyStr, i)
+            else:
+                decPool.map(_decrypt_with_key, fn_list)
         except ValueError:
             print("解密失败: 密钥格式错误")
             return 3
-        except ImportError:
-            print("当前平台不支持多进程, 将降级为串行解密.")
-            unSupportFlag = True
-        if unSupportFlag:
-            try:
-                for i in fn_list:
-                    _decrypt(keyStr, i)
-            except ValueError:
-                print("解密失败: 密钥格式错误")
-                return 3
         print("解密完成")
 
     fn = pathlib.Path(out_dir) / f"t2_{uid}.ts"
