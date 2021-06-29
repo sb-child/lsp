@@ -1,5 +1,6 @@
 import re
 from typing import Union
+import colors
 
 domain_re = re.compile(r'(http[s]?://.*?)/')
 link_re = re.compile(r'"url":"(.*?)"')
@@ -12,7 +13,7 @@ class Puller:
         print(self.modName + ":", message)
 
     def _name(self, mod_name=""):
-        self.modName = f"[{mod_name}]拉取模块"
+        self.modName = colors.f_info(f"[{mod_name}]拉取模块")
 
     def _init(self):
         pass
@@ -26,7 +27,7 @@ class Puller:
         self.lastLinks = []
         self.lastTags = {}
         self.selectedTag = []
-        self.log("模块已准备就绪.")
+        self.log(colors.f_success("模块已准备就绪."))
 
     def _getTags(self):
         pass
@@ -34,7 +35,7 @@ class Puller:
     def getTags(self):
         self.log("拉取分类列表...")
         self._getTags()
-        self.log(f"分类列表拉取完成, 共[{len(self.lastTags)}]个.")
+        self.log(f"分类列表拉取完成, 共[{colors.f_important(len(self.lastTags))}]个.")
 
     def _setTag(self, tag_name: list):
         pass
@@ -45,7 +46,7 @@ class Puller:
         self._setTag(tag_name=tag_name)
         if len(tag_name) == 0:
             self.log(f"切换到默认标签.")
-        self.log(f"指定标签[{','.join([str(i) for i in tag_name])}].")
+        self.log(f"指定标签[{colors.f_important(','.join([str(i) for i in tag_name]))}].")
 
     def _fetch(self):
         pass
@@ -53,19 +54,19 @@ class Puller:
     def fetch(self):
         self.log("拉取视频列表...")
         self._fetch()
-        self.log(f"视频列表拉取完成, 共[{len(self.lastLinks)}]个.")
+        self.log(f"视频列表拉取完成, 共[{colors.f_important(len(self.lastLinks))}]个.")
 
     # def _getDownloadLink(self, index: int) -> dict[str, tuple[str, str, str]]:
     def _getDownloadLink(self, index: int) -> dict:
         pass
 
     def getDownloadLink(self, index: int):
-        self.log("获取下载链接...")
+        self.log(colors.f_info("获取下载链接..."))
         r = self._getDownloadLink(index=index)
         if "error" in r:
-            print("获取链接时出错:", r["error"])
+            print(colors.f_error("获取链接时出错: " + r["error"]))
             return r
-        self.log("获取完成.")
+        self.log(colors.f_success("获取完成."))
         '''
         list:
         [v1.ts, v2.ts, ...]

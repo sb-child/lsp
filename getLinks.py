@@ -1,10 +1,11 @@
-from typing import Union
-
 import bs4
 import re
 import requests
 import random
 import jsDecrypt
+import colors
+
+from typing import Union
 
 
 def myReqGet(url: str):
@@ -15,9 +16,9 @@ def myReqGet(url: str):
 
 # def linkFormat(link: tuple[str, str, str]):
 def linkFormat(link: Union[list, tuple]):
-    return f"* 网页链接: {link[0]}\n" \
-           f"* 标题: {link[1]}\n" \
-           f"* 封面链接: {link[2]}"
+    return f"* 标题: {colors.f_important(link[1])}\n" \
+           f"* 封面链接: {colors.f_important(link[2])}\n" \
+           f"* 网页链接: {colors.f_important(link[0])}"
 
 
 class GetterMiya:

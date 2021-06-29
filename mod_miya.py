@@ -2,6 +2,8 @@
 # 视频拉取模块
 
 import bs4
+
+import colors
 import getLinks
 import getVideoLink
 import decryptLink
@@ -53,14 +55,14 @@ class Puller(modBase.Puller):
 
     def _getDownloadLink(self, index: int):
         link_url = self.lastLinks[index]
-        print(f"视频{index}:\n" + getLinks.linkFormat(link_url))
+        print(f"视频[{colors.f_important(index)}]:\n" + getLinks.linkFormat(link_url))
         this_link = getVideoLink.getLink(link_url[0])
         this_url = self._dl.decrypt(this_link)
-        print(f"* 下载链接:", this_url)
+        print(f"* 下载链接:", colors.f_important(this_url))
         video_list_str = urlGetToStr(this_url)
         videos_list, _ = tsDecode.decoder(video_list_str)
         video_len: float = tsDecode.videoLen(video_list_str)
-        print(f"* 视频时长:", time.strftime("%H:%M:%S", time.gmtime(video_len)))
+        print(f"* 视频时长:", colors.f_important(time.strftime("%H:%M:%S", time.gmtime(video_len))))
         return {
             "list": videos_list,
             "links": link_url,

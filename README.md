@@ -34,12 +34,12 @@
   - linux用户:
     ```shell
     $# 如果你想使用python3运行脚本, 请执行下面的命令
-    $ pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying --user
+    $ pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying colorama --user
     $ pip3 uninstall pycrypto
     $ pip3 uninstall pycryptodome
     $ pip3 install pycryptodome
     $# 如果你想使用pypy3运行脚本, 请执行下面的命令
-    $ pypy3 -m pip install requests beautifulsoup4 lxml pycryptodome tqdm retrying --user
+    $ pypy3 -m pip install requests beautifulsoup4 lxml pycryptodome tqdm retrying colorama --user
     ```
   - windows用户: 运行 `init.cmd`
 + 现在你已经有了运行此脚本所需的环境, 可以[获取并下载视频](#获取并下载视频)啦!
