@@ -87,7 +87,7 @@ class Puller(modBase.Puller):
         video_len: float = tsDecode.videoLen(video_list_str, _decode_url)
         print(f"* 视频时长:", colors.f_important(time.strftime("%H:%M:%S", time.gmtime(video_len))))
         encrypt: str = tsDecode.checkEncrypt(video_list_str, _decode_url)
-        print(f"* 密钥: [{colors.important(encrypt if encrypt != '' else '无需解密')}]")
+        print(f"* 密钥: [{colors.f_important(encrypt if encrypt != '' else '无需解密')}]")
         # print(videos_list, encrypt)
         return {
             "list": videos_list,
