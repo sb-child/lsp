@@ -35,8 +35,8 @@
     ```shell
     $# 如果你想使用python3运行脚本, 请执行下面的命令
     $ pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying colorama --user
-    $ pip3 uninstall pycrypto
-    $ pip3 uninstall pycryptodome
+    $ pip3 uninstall -y pycrypto
+    $ pip3 uninstall -y pycryptodome
     $ pip3 install pycryptodome
     $# 如果你想使用pypy3运行脚本, 请执行下面的命令
     $ pypy3 -m pip install requests beautifulsoup4 lxml pycryptodome tqdm retrying colorama --user
