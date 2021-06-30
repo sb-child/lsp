@@ -53,7 +53,7 @@ def main(selected_mod: str, dld_dir: list, tags: bool, tag: list, no_dld: bool):
                      str(int(time.time())) \
             if dld_dir is None else dld_dir[0]
         pathlib.Path(videos_dir).mkdir(exist_ok=True)
-        print(colors.f_info(f"视频将下载到[{colors.f_important(videos_dir)}]目录"))
+        print(colors.f_info("视频将下载到[") + colors.f_important(videos_dir) + colors.f_info("]目录"))
     if mod is not None:
         mod.fetch()
         link_len = len(mod.lastLinks)
