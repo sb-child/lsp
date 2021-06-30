@@ -8,7 +8,7 @@ default:
   - apt install -y python3 python3-pip wget
   - python3 -m pip install --upgrade pip
   - pip3 config set global.index-url https://opentuna.cn/pypi/web/simple
-  - pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying --user
+  - pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying colorama --user
   # - pip3 uninstall pycrypto
   # - pip3 uninstall pycryptodome
   - pip3 install pycryptodome
