@@ -17,6 +17,8 @@ def main(selected_mod: str, dld_dir: list, tags: bool, tag: list, no_dld: bool):
     restore = False
     if dld_dir is not None and not no_dld:
         lk: dict = videoLock.lockGet(dld_dir[0], fn=lockFile)
+        if "errors" not in lk:
+            lk["errors"] = []
         if "videos" in lk:
             print(colors.f_info(f"上次的下载未完成, 将从上次的进度下载:"))
             print(f"* 当前进度: 视频{colors.f_important(lk['progress'])} / {colors.f_important(len(lk['videos']))}")
