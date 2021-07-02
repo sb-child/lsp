@@ -1,5 +1,5 @@
 ---
-name: bug
+name: 1.bug
 about: 遇到bug?
 title: ''
 labels: 1.反馈, 2.bug
