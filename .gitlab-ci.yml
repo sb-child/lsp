@@ -27,8 +27,8 @@ stages:
 job 测试miya模块的访问:
   stage: test_websites_basic
   script:
-  - python3 modRun.py --mod miya --tags
+  - python3 modRun.py --mod miya --not-download
 job 测试yysp模块的访问:
   stage: test_websites_basic
   script:
-  - python3 modRun.py --mod yysp --tags
+  - python3 modRun.py --mod yysp --not-download
