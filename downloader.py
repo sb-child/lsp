@@ -144,18 +144,18 @@ def downloadM3u8(link: dict,
         fn2.unlink()
 
     print("转换为mp4格式...")
-    fn3 = pathlib.Path(out_dir) / f"{out_file}.mp4"
+    fn3 = pathlib.Path(out_dir) / f"{out_file}_video.mp4"
     if subprocess.run(f"ffmpeg -v 0 -y -i {fn} -c copy {fn3}", shell=True).returncode != 0:
         print("格式转换时出错.")
         return 1
     fn.unlink()
 
     print("下载封面...")
-    fn_img = pathlib.Path(out_dir) / f"{out_file}.jpg"
+    fn_img = pathlib.Path(out_dir) / f"{out_file}_cover.jpg"
     downloadWithRetry(link_url[2], str(fn_img))
 
     print("写出描述文件...")
-    fn_desc = pathlib.Path(out_dir) / f"{out_file}.txt"
+    fn_desc = pathlib.Path(out_dir) / f"{out_file}_desc.txt"
     with open(fn_desc, "w") as f:
         f.write("\n".join(link_url))
 
