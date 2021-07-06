@@ -16,7 +16,7 @@
 </div>
 
 ## 已经适配了两个网站的Python版本的分支在下面
-## [python分支直达链接](python)
+## [python分支直达链接](../../tree/python)
 ## 这个分支是Golang版本, 还在开发, 尚不成熟
 
 <!-- # 快速入手
