@@ -7,16 +7,17 @@
 颜色网站视频爬取下载工具
 </h3>
 <div align='center'>
-<h4>已适配网站列表</h4>
+<h4>已适配网站列表(<code>python</code>分支)</h4>
 <span>miya(蜜芽)</span>
 <span>yysp(夜夜视频)</span>
 </div>
 <br><br><br>
+<h2>喜欢本项目? 不妨点个star~</h2>
 </div>
 
-### 喜欢本项目? 不妨点个star~
-
-## 已经适配了两个网站的Python版本在[这个](../python)分支, 这个分支是正在开发中的Golang版本
+## 已经适配了两个网站的Python版本的分支在下面
+## [python分支直达链接](../python)
+## 这个分支是Golang版本, 还在开发, 尚不成熟
 
 <!-- # 快速入手
 + 安卓手机用户, 可使用`termux`等终端模拟器, 按照linux用户的步骤部署环境并运行.
