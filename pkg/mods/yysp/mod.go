@@ -8,7 +8,7 @@ import (
 )
 
 const (
-	MOD_NAME = "miya"
+	MOD_NAME = "yysp"
 )
 
 type Mod struct {
@@ -16,7 +16,7 @@ type Mod struct {
 }
 
 func (m *Mod) ModDesc() string {
-	return "蜜芽网站视频获取模块"
+	return "夜夜视频(夜夜視頻)网站视频获取模块"
 }
 func (m *Mod) ModName() string {
 	return MOD_NAME
