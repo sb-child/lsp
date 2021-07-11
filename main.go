@@ -8,6 +8,10 @@ import (
 	mods "mods/modio"
 	_ "mods/yysp"
 	"strings"
+	"sync"
+	"time"
+
+	"github.com/gookit/color"
 )
 
 type task struct {
@@ -23,7 +27,7 @@ func getDownloadDir() string {
 }
 
 func main() {
-	fmt.Println("[sb-child/lsp]视频爬取工具")
+	fmt.Println("[sb-child/lsp]视频爬取工具 Golang版本")
 	var (
 		download_dir      string
 		tags_string       string
@@ -78,8 +82,52 @@ func main() {
 func run(t task) {
 	mod := t.mod
 	tags := t.tags
-	fmt.Printf("----[%s]模块正在初始化----\n", (*mod).ModName())
+	上次调用时间 := -1.0
+	输出锁 := sync.Mutex{}
+	p_head := func(换行 bool) {
+		输出锁.Lock()
+		当前时间 := float64(time.Now().UnixNano()) / 1000000000
+		if 上次调用时间 < 0 {
+			color.Info.Print("-.  ")
+			上次调用时间 = 当前时间
+		} else {
+			上次用时 := 当前时间 - 上次调用时间
+			上次调用时间 = 当前时间
+			color.Info.Printf("%.2f", 上次用时)
+		}
+		fmt.Print("^")
+		color.Primary.Printf("%s", (*mod).ModName())
+		if 换行 {
+			color.Warn.Println("...")
+			return
+		}
+		fmt.Print("> ")
+	}
+	需要换行 := func(s string) bool {
+		a := strings.Index(s, "\n")
+		// a == -1 : a里面没有换行符
+		return a != -1
+	}
+	p_info := func(s string) {
+		p_head(需要换行(s))
+		color.Info.Println(s)
+		输出锁.Unlock()
+	}
+	p_warn := func(s string) {
+		p_head(需要换行(s))
+		color.Warn.Println(s)
+		输出锁.Unlock()
+	}
+	p_err := func(s string) {
+		p_head(需要换行(s))
+		color.Error.Println(s)
+		输出锁.Unlock()
+	}
+	(*mod).OnInfo(p_info)
+	(*mod).OnWarn(p_warn)
+	(*mod).OnError(p_err)
 	(*mod).Init()
+
 	fmt.Printf("将下载到[%s]目录\n", getDownloadDir())
 	fmt.Printf("%T %v\n", tags, tags)
 	fmt.Printf("%v\n", *mod)

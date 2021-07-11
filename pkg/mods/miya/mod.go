@@ -2,8 +2,9 @@ package miya
 
 import (
 	mods "mods/modio"
-	tools "mods/mtools"
+	// tools "mods/mtools"
 
+	"github.com/gocolly/colly"
 	"github.com/gojek/heimdall/v7/httpclient"
 )
 
@@ -22,16 +23,17 @@ func (m *Mod) ModName() string {
 	return MOD_NAME
 }
 func (m *Mod) Init() bool {
-	m.hc = tools.NewMyHttpClient()
+	colly.NewCollector()
+	// m.hc = tools.NewMyHttpClient()
 	return true
 }
-func (m *Mod) OnInfo(f func(...interface{})) {
+func (m *Mod) OnInfo(f func(s string)) {
 
 }
-func (m *Mod) OnWarn(f func(...interface{})) {
+func (m *Mod) OnWarn(f func(s string)) {
 
 }
-func (m *Mod) OnError(f func(...interface{})) {
+func (m *Mod) OnError(f func(s string)) {
 
 }
 
