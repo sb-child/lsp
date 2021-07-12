@@ -4,6 +4,7 @@ type ModuleIO interface {
 	ModName() string
 	ModDesc() string
 	Init() bool
+	OnSucc(func(string))
 	OnInfo(func(string))
 	OnWarn(func(string))
 	OnError(func(string))

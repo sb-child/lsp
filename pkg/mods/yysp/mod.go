@@ -2,8 +2,10 @@ package miya
 
 import (
 	"fmt"
+	"math/rand"
 	mods "mods/modio"
 	tools "mods/mtools"
+	"strings"
 
 	"github.com/gocolly/colly"
 )
@@ -13,10 +15,12 @@ const (
 )
 
 type Mod struct {
+	_成功函数   func(string)
 	_信息函数   func(string)
 	_警告函数   func(string)
 	_报错函数   func(string)
 	_爬虫报错函数 func(*colly.Response, error)
+	获取到的网址  string
 }
 
 func (m *Mod) ModDesc() string {
@@ -29,25 +33,49 @@ func (m *Mod) Init() bool {
 	m._爬虫报错函数 = func(r *colly.Response, err error) {
 		m.e_报错(fmt.Sprintf("连接异常[%d]: %s", r.StatusCode, err.Error()))
 	}
-	r := m.t_网站测试("https://www.sbc-io.xyz:81")
-	m.i_信息(r)
-	r = m.t_网站测试("https://yyspzy1.xyz")
-	m.i_信息(r)
+	网址列表 := make([]string, 0)
+	for a := 1; a < 10; a++ {
+		网址列表 = append(网址列表, fmt.Sprintf("https://yyspzy%d.xyz", a))
+	}
+	rand.Shuffle(len(网址列表), func(i, j int) {
+		网址列表[i], 网址列表[j] = 网址列表[j], 网址列表[i]
+	})
+	for _, v := range 网址列表 {
+		r := m.t_网站测试(v)
+		m.i_信息(r)
+		if r != "" {
+			break
+		}
+	}
 	return true
 }
 func (m *Mod) t_网站测试(链接 string) string {
 	结果 := ""
 	爬虫 := tools.CollyCollector()
-	m.i_信息(fmt.Sprintf("开始连接[%s]", 链接))
 	爬虫.OnError(m._爬虫报错函数)
-	爬虫.OnResponse(func(r *colly.Response) {
-		m.i_信息(fmt.Sprintf("回应[%d]", r.StatusCode))
-		// 结果 = string(r.Body)
+	爬虫.OnRequest(func(r *colly.Request) {
+		m.i_信息(fmt.Sprintf("访问[%s]...", r.URL.String()))
 	})
-
+	爬虫.OnResponse(func(r *colly.Response) {
+		m.s_成功(fmt.Sprintf("回应[%d]", r.StatusCode))
+	})
+	爬虫.OnHTML("meta[http-equiv=\"refresh\"]", func(e *colly.HTMLElement) {
+		// 跳转
+		主页 := e.Attr("content")[8:]
+		主页 = strings.Replace(主页, "http://", "https://", 1)
+		m.w_警告(fmt.Sprintf("跳转至[%s]", 主页))
+		爬虫.Visit(主页)
+	})
+	爬虫.OnHTML("meta[name=\"renderer\"]", func(e *colly.HTMLElement) {
+		// 主页
+		结果 = e.Request.URL.String()
+	})
 	爬虫.Visit(链接)
 	爬虫.Wait()
 	return 结果
+}
+func (m *Mod) OnSucc(f func(s string)) {
+	m._成功函数 = f
 }
 func (m *Mod) OnInfo(f func(s string)) {
 	m._信息函数 = f
@@ -57,6 +85,9 @@ func (m *Mod) OnWarn(f func(s string)) {
 }
 func (m *Mod) OnError(f func(s string)) {
 	m._报错函数 = f
+}
+func (m *Mod) s_成功(s string) {
+	m._成功函数(s)
 }
 func (m *Mod) i_信息(s string) {
 	m._信息函数(s)

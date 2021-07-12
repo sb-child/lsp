@@ -27,6 +27,9 @@ func (m *Mod) Init() bool {
 	// m.hc = tools.NewMyHttpClient()
 	return true
 }
+func (m *Mod) OnSucc(f func(s string)) {
+
+}
 func (m *Mod) OnInfo(f func(s string)) {
 
 }
