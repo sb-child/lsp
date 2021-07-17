@@ -61,20 +61,20 @@ func (m *Mod) Init() bool {
 	}
 	return true
 }
-func (m *Mod) AddTag() {
-	
+func (m *Mod) AddTag(name string) {
+
 }
 func (m *Mod) ResetTags() {
-	
+
 }
-func (m *Mod) GetAllTags() {
-	
+func (m *Mod) GetAllTags() map[string]string {
+	return m.g_获取分类列表()
 }
 func (m *Mod) GetVideos() {
-	
+
 }
 func (m *Mod) GetVideoLink() {
-	
+
 }
 func (m *Mod) t_网站测试(链接 string) string {
 	结果 := ""
@@ -97,12 +97,25 @@ func (m *Mod) t_网站测试(链接 string) string {
 	爬虫.Wait()
 	return 结果
 }
-func (m *Mod) g_获取分类列表() {
+func (m *Mod) g_获取分类列表() map[string]string {
 	爬虫 := tools.CollyCollector()
+	list := make(map[string]string, 0)
 	爬虫.OnError(m._爬虫报错函数)
 	爬虫.OnRequest(m._爬虫请求函数)
 	爬虫.OnResponse(m._爬虫回应函数)
-	
+	爬虫.OnHTML(`a[class="1\=0"]`, func(e *colly.HTMLElement) {
+		href := strings.TrimSpace(e.Attr("href"))
+		f := tools.TagLinkMatch().FindStringSubmatch(href)
+		if len(f) == 0 {
+			return
+		}
+		r := strings.TrimSpace(f[1])
+		rt := strings.TrimSpace(e.Text)
+		list[r] = rt
+	})
+	爬虫.Visit(m.获取到的网址)
+	爬虫.Wait()
+	return list
 }
 func (m *Mod) OnSucc(f func(s string)) {
 	m._成功函数 = f

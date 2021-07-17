@@ -62,9 +62,6 @@ func main() {
 		os.Exit(3)
 		return
 	}
-	if 仅获取全部标签 {
-		return
-	}
 	if 仅获取视频列表 {
 		下载目录 = ""
 	}
@@ -149,6 +146,17 @@ func run(t task) {
 		fmt.Println("初始化失败, 退出.")
 		os.Exit(1)
 		return
+	}
+	if t.get_tags_only {
+		fmt.Println("正在获取分类...")
+		tags := (*mod).GetAllTags()
+		for k, v := range tags {
+			fmt.Print("分类[")
+			color.Cyan.Print(v)
+			fmt.Print("] 编号[")
+			color.Cyan.Print(k)
+			fmt.Print("]\n")
+		}
 	}
 	fmt.Print("初始化完成, ")
 	if len(dld_dir) == 0 {

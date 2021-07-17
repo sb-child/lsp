@@ -39,7 +39,21 @@ func (m *Mod) OnWarn(f func(s string)) {
 func (m *Mod) OnError(f func(s string)) {
 
 }
+func (m *Mod) AddTag(name string) {
 
+}
+func (m *Mod) ResetTags() {
+
+}
+func (m *Mod) GetAllTags() map[string]string {
+	return make(map[string]string)
+}
+func (m *Mod) GetVideos() {
+
+}
+func (m *Mod) GetVideoLink() {
+
+}
 func init() {
 	var m mods.ModuleIO = &Mod{}
 	mods.AddModule(MOD_NAME, &m)

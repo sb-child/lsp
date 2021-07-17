@@ -8,6 +8,7 @@ type ModuleIO interface {
 	OnInfo(func(string))
 	OnWarn(func(string))
 	OnError(func(string))
+	GetAllTags() map[string]string
 }
 
 var mods map[string]*ModuleIO
