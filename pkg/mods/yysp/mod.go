@@ -20,6 +20,8 @@ type Mod struct {
 	_警告函数   func(string)
 	_报错函数   func(string)
 	_爬虫报错函数 func(*colly.Response, error)
+	_爬虫请求函数 func(*colly.Request)
+	_爬虫回应函数 func(*colly.Response)
 	获取到的网址  string
 }
 
@@ -33,6 +35,12 @@ func (m *Mod) Init() bool {
 	m._爬虫报错函数 = func(r *colly.Response, err error) {
 		m.e_报错(fmt.Sprintf("连接异常[%d]: %s", r.StatusCode, err.Error()))
 	}
+	m._爬虫请求函数 = func(r *colly.Request) {
+		m.i_信息(fmt.Sprintf("访问[%s]...", r.URL.String()))
+	}
+	m._爬虫回应函数 = func(r *colly.Response) {
+		m.s_成功(fmt.Sprintf("回应[%d]", r.StatusCode))
+	}
 	网址列表 := make([]string, 0)
 	for a := 1; a < 10; a++ {
 		网址列表 = append(网址列表, fmt.Sprintf("https://yyspzy%d.xyz", a))
@@ -42,23 +50,38 @@ func (m *Mod) Init() bool {
 	})
 	for _, v := range 网址列表 {
 		r := m.t_网站测试(v)
-		m.i_信息(r)
 		if r != "" {
+			m.获取到的网址 = r
 			break
 		}
 	}
+	if m.获取到的网址 == "" {
+		m.e_报错("获取网址失败")
+		return false
+	}
 	return true
+}
+func (m *Mod) AddTag() {
+	
+}
+func (m *Mod) ResetTags() {
+	
+}
+func (m *Mod) GetAllTags() {
+	
+}
+func (m *Mod) GetVideos() {
+	
+}
+func (m *Mod) GetVideoLink() {
+	
 }
 func (m *Mod) t_网站测试(链接 string) string {
 	结果 := ""
 	爬虫 := tools.CollyCollector()
 	爬虫.OnError(m._爬虫报错函数)
-	爬虫.OnRequest(func(r *colly.Request) {
-		m.i_信息(fmt.Sprintf("访问[%s]...", r.URL.String()))
-	})
-	爬虫.OnResponse(func(r *colly.Response) {
-		m.s_成功(fmt.Sprintf("回应[%d]", r.StatusCode))
-	})
+	爬虫.OnRequest(m._爬虫请求函数)
+	爬虫.OnResponse(m._爬虫回应函数)
 	爬虫.OnHTML("meta[http-equiv=\"refresh\"]", func(e *colly.HTMLElement) {
 		// 跳转
 		主页 := e.Attr("content")[8:]
@@ -73,6 +96,13 @@ func (m *Mod) t_网站测试(链接 string) string {
 	爬虫.Visit(链接)
 	爬虫.Wait()
 	return 结果
+}
+func (m *Mod) g_获取分类列表() {
+	爬虫 := tools.CollyCollector()
+	爬虫.OnError(m._爬虫报错函数)
+	爬虫.OnRequest(m._爬虫请求函数)
+	爬虫.OnResponse(m._爬虫回应函数)
+	
 }
 func (m *Mod) OnSucc(f func(s string)) {
 	m._成功函数 = f

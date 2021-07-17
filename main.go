@@ -7,6 +7,7 @@ import (
 	_ "mods/miya"
 	mods "mods/modio"
 	_ "mods/yysp"
+	"os"
 	"strings"
 	"sync"
 	"time"
@@ -15,13 +16,14 @@ import (
 )
 
 type task struct {
-	mod  *mods.ModuleIO
-	tags []string
-	dir  string
+	mod           *mods.ModuleIO
+	tags          []string
+	dir           string
+	get_tags_only bool
 }
 
 func getDownloadDir() string {
-	randBytes := make([]byte, 8)
+	randBytes := make([]byte, 16)
 	rand.Reader.Read(randBytes)
 	return fmt.Sprintf("v_auto_%x", randBytes)
 }
@@ -39,12 +41,13 @@ func main() {
 	flag.StringVar(&选中的模块, "mod", "", "指定要加载的模块")
 	flag.BoolVar(&仅获取可选模块, "mods", false, "可选: 获取当前可选模块并终止")
 	flag.StringVar(&下载目录, "dir", getDownloadDir(), "可选: 指定下载目录")
-	flag.StringVar(&标签字符串, "tag", "", "可选: 指定标签(编号)并终止, 用英文逗号分隔, 可指定多个, 否则为默认")
-	flag.BoolVar(&仅获取全部标签, "tags", false, "可选: 获取当前模块中, 全部可用的标签并终止")
+	flag.StringVar(&标签字符串, "tag", "", "可选: 指定分类(编号)并终止, 用英文逗号分隔, 可指定多个, 否则为默认")
+	flag.BoolVar(&仅获取全部标签, "tags", false, "可选: 获取当前模块中, 全部可用的分类并终止")
 	flag.BoolVar(&仅获取视频列表, "list", false, "可选: 仅拉取视频列表, 不下载")
 	flag.Parse()
 	if 下载目录 == "" && !仅获取视频列表 {
 		fmt.Println("请指定一个下载目录")
+		os.Exit(4)
 		return
 	}
 	if 仅获取可选模块 {
@@ -56,6 +59,7 @@ func main() {
 	}
 	if 选中的模块 == "" {
 		fmt.Println("请指定一个模块")
+		os.Exit(3)
 		return
 	}
 	if 仅获取全部标签 {
@@ -67,6 +71,7 @@ func main() {
 	模块实例 := mods.GetModule(选中的模块)
 	if 模块实例 == nil {
 		fmt.Printf("找不到[%s]模块\n", 选中的模块)
+		os.Exit(2)
 		return
 	}
 	_tags := strings.Split(标签字符串, ",")
@@ -79,13 +84,15 @@ func main() {
 	}
 	fmt.Printf("载入[%s]模块...\n", 选中的模块)
 	run(task{
-		mod:  模块实例,
-		tags: 标签列表,
-		dir:  下载目录,
+		mod:           模块实例,
+		tags:          标签列表,
+		dir:           下载目录,
+		get_tags_only: 仅获取全部标签,
 	})
 }
 func run(t task) {
 	mod := t.mod
+	dld_dir := t.dir
 	// tags := t.tags
 	上次调用时间 := -1.0
 	输出锁 := sync.Mutex{}
@@ -137,8 +144,16 @@ func run(t task) {
 	(*mod).OnInfo(p_info)
 	(*mod).OnWarn(p_warn)
 	(*mod).OnError(p_err)
-	(*mod).Init()
-	fmt.Printf("初始化完成, 将下载到[%s]目录\n", getDownloadDir())
-	// fmt.Printf("%T %v\n", tags, tags)
-	// fmt.Printf("%v\n", *mod)
+	succ := (*mod).Init()
+	if !succ {
+		fmt.Println("初始化失败, 退出.")
+		os.Exit(1)
+		return
+	}
+	fmt.Print("初始化完成, ")
+	if len(dld_dir) == 0 {
+		fmt.Println("获取视频列表...")
+	} else {
+		fmt.Printf("将下载到[%s]目录\n", dld_dir)
+	}
 }
