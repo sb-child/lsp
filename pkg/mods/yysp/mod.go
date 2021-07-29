@@ -31,7 +31,7 @@ func (m *Mod) ModDesc() string {
 func (m *Mod) ModName() string {
 	return MOD_NAME
 }
-func (m *Mod) Init() bool {
+func (m *Mod) makeSpider() *colly.Collector {
 	m._爬虫报错函数 = func(r *colly.Response, err error) {
 		m.e_报错(fmt.Sprintf("连接异常[%d]: %s", r.StatusCode, err.Error()))
 	}
@@ -41,6 +41,13 @@ func (m *Mod) Init() bool {
 	m._爬虫回应函数 = func(r *colly.Response) {
 		m.s_成功(fmt.Sprintf("回应[%d]", r.StatusCode))
 	}
+	爬虫 := tools.CollyCollector()
+	爬虫.OnError(m._爬虫报错函数)
+	爬虫.OnRequest(m._爬虫请求函数)
+	爬虫.OnResponse(m._爬虫回应函数)
+	return 爬虫
+}
+func (m *Mod) Init() bool {
 	网址列表 := make([]string, 0)
 	for a := 1; a < 10; a++ {
 		网址列表 = append(网址列表, fmt.Sprintf("https://yyspzy%d.xyz", a))
@@ -68,7 +75,21 @@ func (m *Mod) ResetTags() {
 
 }
 func (m *Mod) GetAllTags() map[string]string {
-	return m.g_获取分类列表()
+	爬虫 := m.makeSpider()
+	list := make(map[string]string, 0)
+	爬虫.OnHTML(`a[class="1\=0"]`, func(e *colly.HTMLElement) {
+		href := strings.TrimSpace(e.Attr("href"))
+		f := tools.TagLinkMatch().FindStringSubmatch(href)
+		if len(f) == 0 {
+			return
+		}
+		r := strings.TrimSpace(f[1])
+		rt := strings.TrimSpace(e.Text)
+		list[r] = rt
+	})
+	爬虫.Visit(m.获取到的网址)
+	爬虫.Wait()
+	return list
 }
 func (m *Mod) GetVideos() {
 
@@ -78,10 +99,7 @@ func (m *Mod) GetVideoLink() {
 }
 func (m *Mod) t_网站测试(链接 string) string {
 	结果 := ""
-	爬虫 := tools.CollyCollector()
-	爬虫.OnError(m._爬虫报错函数)
-	爬虫.OnRequest(m._爬虫请求函数)
-	爬虫.OnResponse(m._爬虫回应函数)
+	爬虫 := m.makeSpider()
 	爬虫.OnHTML("meta[http-equiv=\"refresh\"]", func(e *colly.HTMLElement) {
 		// 跳转
 		主页 := e.Attr("content")[8:]
@@ -96,26 +114,6 @@ func (m *Mod) t_网站测试(链接 string) string {
 	爬虫.Visit(链接)
 	爬虫.Wait()
 	return 结果
-}
-func (m *Mod) g_获取分类列表() map[string]string {
-	爬虫 := tools.CollyCollector()
-	list := make(map[string]string, 0)
-	爬虫.OnError(m._爬虫报错函数)
-	爬虫.OnRequest(m._爬虫请求函数)
-	爬虫.OnResponse(m._爬虫回应函数)
-	爬虫.OnHTML(`a[class="1\=0"]`, func(e *colly.HTMLElement) {
-		href := strings.TrimSpace(e.Attr("href"))
-		f := tools.TagLinkMatch().FindStringSubmatch(href)
-		if len(f) == 0 {
-			return
-		}
-		r := strings.TrimSpace(f[1])
-		rt := strings.TrimSpace(e.Text)
-		list[r] = rt
-	})
-	爬虫.Visit(m.获取到的网址)
-	爬虫.Wait()
-	return list
 }
 func (m *Mod) OnSucc(f func(s string)) {
 	m._成功函数 = f

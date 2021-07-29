@@ -6,11 +6,10 @@ import (
 	"fmt"
 	_ "mods/miya"
 	mods "mods/modio"
+	"mods/mtools"
 	_ "mods/yysp"
 	"os"
 	"strings"
-	"sync"
-	"time"
 
 	"github.com/gookit/color"
 )
@@ -91,56 +90,11 @@ func run(t task) {
 	mod := t.mod
 	dld_dir := t.dir
 	// tags := t.tags
-	上次调用时间 := -1.0
-	输出锁 := sync.Mutex{}
-	p_head := func(换行 bool, 字符 rune) {
-		输出锁.Lock()
-		当前时间 := float64(time.Now().UnixNano()) / 1000000000
-		if 上次调用时间 < 0 {
-			color.Info.Print("-.  ")
-			上次调用时间 = 当前时间
-		} else {
-			上次用时 := 当前时间 - 上次调用时间
-			上次调用时间 = 当前时间
-			color.Info.Printf("%.2f", 上次用时)
-		}
-		fmt.Print("^")
-		color.Primary.Printf("%s", (*mod).ModName())
-		if 换行 {
-			color.Warn.Println("...")
-			return
-		}
-		color.LightMagenta.Printf("%c>", 字符)
-	}
-	需要换行 := func(s string) bool {
-		a := strings.Index(s, "\n")
-		// a == -1 : a里面没有换行符
-		return a != -1
-	}
-	p_info := func(s string) {
-		p_head(需要换行(s), 'i')
-		color.Cyan.Println(s)
-		输出锁.Unlock()
-	}
-	p_succ := func(s string) {
-		p_head(需要换行(s), 'S')
-		color.Success.Println(s)
-		输出锁.Unlock()
-	}
-	p_warn := func(s string) {
-		p_head(需要换行(s), 'W')
-		color.Warn.Println(s)
-		输出锁.Unlock()
-	}
-	p_err := func(s string) {
-		p_head(需要换行(s), 'E')
-		color.Error.Println(s)
-		输出锁.Unlock()
-	}
-	(*mod).OnSucc(p_succ)
-	(*mod).OnInfo(p_info)
-	(*mod).OnWarn(p_warn)
-	(*mod).OnError(p_err)
+	mc := mtools.NewMyColor((*mod).ModName())
+	(*mod).OnSucc(mc.Succ)
+	(*mod).OnInfo(mc.Info)
+	(*mod).OnWarn(mc.Warn)
+	(*mod).OnError(mc.Err)
 	succ := (*mod).Init()
 	if !succ {
 		fmt.Println("初始化失败, 退出.")
