@@ -111,6 +111,7 @@ func run(t task) {
 			color.Cyan.Print(k)
 			fmt.Print("]\n")
 		}
+		return
 	}
 	fmt.Print("初始化完成, ")
 	if len(dld_dir) == 0 {

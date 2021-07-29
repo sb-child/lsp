@@ -20,12 +20,15 @@ type MyColor struct {
 }
 
 func NewMyColor(mod string) *MyColor {
-	mc := MyColor{modName: mod}
+	mc := MyColor{
+		modName: mod,
+	}
 	mc.Init()
 	return &mc
 }
 func (mc *MyColor) Init() {
 	mc.输出锁 = sync.Mutex{}
+	mc.上次调用时间 = 0
 	p_head := func(换行 bool, 字符 rune) {
 		mc.输出锁.Lock()
 		当前时间 := float64(time.Now().UnixNano()) / 1000000000

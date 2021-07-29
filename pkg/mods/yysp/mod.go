@@ -15,10 +15,10 @@ const (
 )
 
 type Mod struct {
-	_成功函数   func(string)
-	_信息函数   func(string)
-	_警告函数   func(string)
-	_报错函数   func(string)
+	s_成功    func(string)
+	i_信息    func(string)
+	w_警告    func(string)
+	e_报错    func(string)
 	_爬虫报错函数 func(*colly.Response, error)
 	_爬虫请求函数 func(*colly.Request)
 	_爬虫回应函数 func(*colly.Response)
@@ -79,6 +79,7 @@ func (m *Mod) GetAllTags() map[string]string {
 	list := make(map[string]string, 0)
 	爬虫.OnHTML(`a[class="1\=0"]`, func(e *colly.HTMLElement) {
 		href := strings.TrimSpace(e.Attr("href"))
+		m.i_信息(href)
 		f := tools.TagLinkMatch().FindStringSubmatch(href)
 		if len(f) == 0 {
 			return
@@ -91,7 +92,10 @@ func (m *Mod) GetAllTags() map[string]string {
 	爬虫.Wait()
 	return list
 }
+
+// GetVideos 获取指定分类或默认分类的视频网页链接
 func (m *Mod) GetVideos() {
+	// 爬虫 := m.makeSpider()
 
 }
 func (m *Mod) GetVideoLink() {
@@ -116,28 +120,16 @@ func (m *Mod) t_网站测试(链接 string) string {
 	return 结果
 }
 func (m *Mod) OnSucc(f func(s string)) {
-	m._成功函数 = f
+	m.s_成功 = f
 }
 func (m *Mod) OnInfo(f func(s string)) {
-	m._信息函数 = f
+	m.i_信息 = f
 }
 func (m *Mod) OnWarn(f func(s string)) {
-	m._警告函数 = f
+	m.w_警告 = f
 }
 func (m *Mod) OnError(f func(s string)) {
-	m._报错函数 = f
-}
-func (m *Mod) s_成功(s string) {
-	m._成功函数(s)
-}
-func (m *Mod) i_信息(s string) {
-	m._信息函数(s)
-}
-func (m *Mod) w_警告(s string) {
-	m._警告函数(s)
-}
-func (m *Mod) e_报错(s string) {
-	m._报错函数(s)
+	m.e_报错 = f
 }
 
 func init() {
