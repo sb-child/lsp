@@ -117,20 +117,26 @@ func run(t task) {
 		_, ok := tags[s]
 		return ok
 	}
+	
 	for _, v := range t.tags {
 		if !_checkTag(v) {
-			fmt.Printf("%s 不属于任何一个分类\n", v)
+			fmt.Printf("[%s]不属于任何一个分类\n", v)
 			os.Exit(10)
 			return
 		}
 	}
-	fmt.Print("初始化完成, 获取视频列表...")
+	fmt.Println("初始化完成, 获取视频列表...")
 	r := (*mod).GetVideos(t.tags)
-	for _, v := range r {
-		fmt.Printf("%v\n", v)
-	}
+	color.Success.Printf("共获取到[%d]个视频\n", len(r))
 	if len(dld_dir) == 0 {
-		fmt.Println("")
+		for k, v := range r {
+			fmt.Print("[")
+			color.Cyan.Printf("%d", k)
+			fmt.Print("]标题: ")
+			color.Yellow.Print(v.Title)
+			fmt.Print("\n 链接: ")
+			color.Cyan.Println(v.Link)
+		}
 	} else {
 		fmt.Printf("将下载到[%s]目录\n", dld_dir)
 	}

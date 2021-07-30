@@ -28,7 +28,7 @@ func NewMyColor(mod string) *MyColor {
 }
 func (mc *MyColor) Init() {
 	mc.输出锁 = sync.Mutex{}
-	mc.上次调用时间 = 0
+	mc.上次调用时间 = -1
 	p_head := func(换行 bool, 字符 rune) {
 		mc.输出锁.Lock()
 		当前时间 := float64(time.Now().UnixNano()) / 1000000000

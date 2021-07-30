@@ -6,6 +6,7 @@ import (
 	mods "mods/modio"
 	tools "mods/mtools"
 	"strings"
+	"sync"
 
 	"github.com/gocolly/colly"
 )
@@ -101,14 +102,15 @@ func (m *Mod) tag2url(t string) string {
 func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 	爬虫 := m.makeSpider()
 	r := make([]mods.VideoContainer, 0)
-	rc := make(chan mods.VideoContainer, 0)
-	done := make(chan struct{}, 0)
+	rc := make(chan mods.VideoContainer, 20+10*len(t))
+	goLock := sync.WaitGroup{}
 	爬虫.OnHTML(`li>a[target="_blank"]`, func(e *colly.HTMLElement) {
 		link := m.主站 + strings.TrimSpace(e.Attr("href"))
 		title := strings.TrimSpace(e.Attr("title"))
 		img := m.主站 + strings.TrimSpace(e.ChildAttr("img", "src"))
 		// m.i_信息(fmt.Sprintf("l:%s t:%s i:%s", link, title, img))
 		go func() {
+			goLock.Add(1)
 			rc <- mods.VideoContainer{Link: link, Title: title, Desc: "", Img: img}
 		}()
 	})
@@ -120,8 +122,7 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 					continue
 				}
 				r = append(r, x)
-			case <-done:
-				break
+				goLock.Done()
 			}
 		}
 	}()
@@ -140,7 +141,9 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 		爬虫.Visit(v)
 	}
 	爬虫.Wait()
-	close(done)
+	m.i_信息("全部获取完成, 等待汇总任务...")
+	goLock.Wait()
+	m.s_成功(fmt.Sprintf("汇总完成, 共[%d]个视频", len(r)))
 	return r
 }
 func (m *Mod) GetVideoLink() {
