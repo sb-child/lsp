@@ -48,8 +48,8 @@ func (m *Mod) ResetTags() {
 func (m *Mod) GetAllTags() map[string]string {
 	return make(map[string]string)
 }
-func (m *Mod) GetVideos() {
-
+func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
+	return make([]mods.VideoContainer, 0)
 }
 func (m *Mod) GetVideoLink() {
 

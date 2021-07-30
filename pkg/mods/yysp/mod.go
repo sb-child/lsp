@@ -22,7 +22,7 @@ type Mod struct {
 	_爬虫报错函数 func(*colly.Response, error)
 	_爬虫请求函数 func(*colly.Request)
 	_爬虫回应函数 func(*colly.Response)
-	获取到的网址  string
+	主站      string
 }
 
 func (m *Mod) ModDesc() string {
@@ -33,13 +33,13 @@ func (m *Mod) ModName() string {
 }
 func (m *Mod) makeSpider() *colly.Collector {
 	m._爬虫报错函数 = func(r *colly.Response, err error) {
-		m.e_报错(fmt.Sprintf("连接异常[%d]: %s", r.StatusCode, err.Error()))
+		m.e_报错(fmt.Sprintf("[%s]连接异常[%d]: %s", r.Request.URL.String(), r.StatusCode, err.Error()))
 	}
 	m._爬虫请求函数 = func(r *colly.Request) {
 		m.i_信息(fmt.Sprintf("访问[%s]...", r.URL.String()))
 	}
 	m._爬虫回应函数 = func(r *colly.Response) {
-		m.s_成功(fmt.Sprintf("回应[%d]", r.StatusCode))
+		m.s_成功(fmt.Sprintf("[%s]回应[%d]", r.Request.URL.String(), r.StatusCode))
 	}
 	爬虫 := tools.CollyCollector()
 	爬虫.OnError(m._爬虫报错函数)
@@ -58,11 +58,11 @@ func (m *Mod) Init() bool {
 	for _, v := range 网址列表 {
 		r := m.t_网站测试(v)
 		if r != "" {
-			m.获取到的网址 = r
+			m.主站 = r
 			break
 		}
 	}
-	if m.获取到的网址 == "" {
+	if m.主站 == "" {
 		m.e_报错("获取网址失败")
 		return false
 	}
@@ -79,7 +79,7 @@ func (m *Mod) GetAllTags() map[string]string {
 	list := make(map[string]string, 0)
 	爬虫.OnHTML(`a[class="1\=0"]`, func(e *colly.HTMLElement) {
 		href := strings.TrimSpace(e.Attr("href"))
-		m.i_信息(href)
+		// m.i_信息(href)
 		f := tools.TagLinkMatch().FindStringSubmatch(href)
 		if len(f) == 0 {
 			return
@@ -88,15 +88,60 @@ func (m *Mod) GetAllTags() map[string]string {
 		rt := strings.TrimSpace(e.Text)
 		list[r] = rt
 	})
-	爬虫.Visit(m.获取到的网址)
+	爬虫.Visit(m.主站)
 	爬虫.Wait()
 	return list
 }
 
-// GetVideos 获取指定分类或默认分类的视频网页链接
-func (m *Mod) GetVideos() {
-	// 爬虫 := m.makeSpider()
+func (m *Mod) tag2url(t string) string {
+	return fmt.Sprintf(m.主站+"/index.php/vod/type/id/%s.html", t)
+}
 
+// GetVideos 获取指定分类或默认分类的视频网页链接
+func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
+	爬虫 := m.makeSpider()
+	r := make([]mods.VideoContainer, 0)
+	rc := make(chan mods.VideoContainer, 0)
+	done := make(chan struct{}, 0)
+	爬虫.OnHTML(`li>a[target="_blank"]`, func(e *colly.HTMLElement) {
+		link := m.主站 + strings.TrimSpace(e.Attr("href"))
+		title := strings.TrimSpace(e.Attr("title"))
+		img := m.主站 + strings.TrimSpace(e.ChildAttr("img", "src"))
+		// m.i_信息(fmt.Sprintf("l:%s t:%s i:%s", link, title, img))
+		go func() {
+			rc <- mods.VideoContainer{Link: link, Title: title, Desc: "", Img: img}
+		}()
+	})
+	go func() {
+		for {
+			select {
+			case x, ok := <-rc:
+				if !ok {
+					continue
+				}
+				r = append(r, x)
+			case <-done:
+				break
+			}
+		}
+	}()
+	// 分类转链接
+	if len(t) == 0 {
+		t = append(t, m.主站)
+	} else {
+		nt := make([]string, 0)
+		for _, v := range t {
+			nt = append(nt, m.tag2url(v))
+		}
+		t = nt
+	}
+	// 并行爬取
+	for _, v := range t {
+		爬虫.Visit(v)
+	}
+	爬虫.Wait()
+	close(done)
+	return r
 }
 func (m *Mod) GetVideoLink() {
 

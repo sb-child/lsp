@@ -1,5 +1,12 @@
 package modio
 
+type VideoContainer struct {
+	Link  string
+	Title string
+	Img   string
+	Desc  string
+}
+
 type ModuleIO interface {
 	ModName() string
 	ModDesc() string
@@ -9,6 +16,7 @@ type ModuleIO interface {
 	OnWarn(func(string))
 	OnError(func(string))
 	GetAllTags() map[string]string
+	GetVideos([]string) []VideoContainer
 }
 
 var mods map[string]*ModuleIO

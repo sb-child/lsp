@@ -97,13 +97,13 @@ func run(t task) {
 	(*mod).OnError(mc.Err)
 	succ := (*mod).Init()
 	if !succ {
-		fmt.Println("初始化失败, 退出.")
+		fmt.Println("初始化失败")
 		os.Exit(1)
 		return
 	}
+	fmt.Println("正在获取分类...")
+	tags := (*mod).GetAllTags()
 	if t.get_tags_only {
-		fmt.Println("正在获取分类...")
-		tags := (*mod).GetAllTags()
 		for k, v := range tags {
 			fmt.Print("分类[")
 			color.Cyan.Print(v)
@@ -113,10 +113,26 @@ func run(t task) {
 		}
 		return
 	}
-	fmt.Print("初始化完成, ")
+	_checkTag := func(s string) bool {
+		_, ok := tags[s]
+		return ok
+	}
+	for _, v := range t.tags {
+		if !_checkTag(v) {
+			fmt.Printf("%s 不属于任何一个分类\n", v)
+			os.Exit(10)
+			return
+		}
+	}
+	fmt.Print("初始化完成, 获取视频列表...")
+	r := (*mod).GetVideos(t.tags)
+	for _, v := range r {
+		fmt.Printf("%v\n", v)
+	}
 	if len(dld_dir) == 0 {
-		fmt.Println("获取视频列表...")
+		fmt.Println("")
 	} else {
 		fmt.Printf("将下载到[%s]目录\n", dld_dir)
 	}
+
 }
