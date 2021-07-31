@@ -93,6 +93,7 @@ func main() {
 	})
 }
 func run(t task) {
+	// 初始化
 	mod := t.mod
 	dld_dir := t.dir
 	mc := mtools.NewMyColor((*mod).ModName())
@@ -106,7 +107,8 @@ func run(t task) {
 		os.Exit(1)
 		return
 	}
-	fmt.Println("正在获取分类...")
+	// 获取分类, 检查分类是否正确
+	fmt.Println("获取分类...")
 	tags := (*mod).GetAllTags()
 	fmt.Printf("共[%d]个\n", len(tags))
 	if t.get_tags_only {
@@ -137,19 +139,21 @@ func run(t task) {
 		}
 		tags_temp[v] = struct{}{}
 	}
-	fmt.Println("初始化完成, 获取视频列表...")
+	// 获取视频列表
+	fmt.Println("获取视频列表...")
 	r := (*mod).GetVideos(t.tags)
 	if len(dld_dir) == 0 {
 		for k, v := range r {
 			fmt.Print("[")
 			color.Cyan.Printf("%d", k)
-			fmt.Print("]标题: ")
+			fmt.Print("]: ")
 			color.Yellow.Print(v.Title)
-			fmt.Print("\n 链接: ")
+			fmt.Print("\n ^ ")
 			color.Blue.Println(v.Link)
 		}
 		return
 	}
-	fmt.Printf("将下载到[%s]目录\n", dld_dir)
-	os.Mkdir(dld_dir, os.ModeDir)
+	// 输出下载路径, 视频个数. 创建目录
+	fmt.Printf("准备下载[%s]<-[%d]\n", dld_dir, len(r))
+	os.Mkdir(dld_dir, os.ModePerm)
 }

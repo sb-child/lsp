@@ -34,13 +34,13 @@ func (m *Mod) ModName() string {
 }
 func (m *Mod) makeSpider() *colly.Collector {
 	m._爬虫报错函数 = func(r *colly.Response, err error) {
-		m.e_报错(fmt.Sprintf("[%s]连接异常[%d]: %s", r.Request.URL.String(), r.StatusCode, err.Error()))
+		m.e_报错(fmt.Sprintf("[%s]![%d]: %s", r.Request.URL.String(), r.StatusCode, err.Error()))
 	}
 	m._爬虫请求函数 = func(r *colly.Request) {
-		m.i_信息(fmt.Sprintf("访问[%s]...", r.URL.String()))
+		m.i_信息(fmt.Sprintf(">[%s]", r.URL.String()))
 	}
 	m._爬虫回应函数 = func(r *colly.Response) {
-		m.s_成功(fmt.Sprintf("[%s]回应[%d]", r.Request.URL.String(), r.StatusCode))
+		m.s_成功(fmt.Sprintf("[%s]>[%d]", r.Request.URL.String(), r.StatusCode))
 	}
 	爬虫 := tools.CollyCollector()
 	爬虫.OnError(m._爬虫报错函数)
@@ -104,9 +104,26 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 	r := make([]mods.VideoContainer, 0)
 	rc := make(chan mods.VideoContainer, 20+10*len(t))
 	goLock := sync.WaitGroup{}
+	processTitle := func(ot string) (r string) {
+		ot = strings.TrimSpace(ot)
+		ot = strings.ReplaceAll(ot, "\n", " ")
+		for {
+			title := strings.ReplaceAll(
+				ot,
+				"  ",
+				" ",
+			)
+			if ot == title {
+				r = title
+				break
+			}
+			ot = title
+		}
+		return
+	}
 	爬虫.OnHTML(`li>a[target="_blank"]`, func(e *colly.HTMLElement) {
 		link := m.主站 + strings.TrimSpace(e.Attr("href"))
-		title := strings.ReplaceAll(strings.TrimSpace(e.Attr("title")), "\n", " ")
+		title := processTitle(e.Attr("title"))
 		img := m.主站 + strings.TrimSpace(e.ChildAttr("img", "src"))
 		// m.i_信息(fmt.Sprintf("l:%s t:%s i:%s", link, title, img))
 		go func() {
@@ -146,7 +163,7 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 	m.s_成功(fmt.Sprintf("汇总完成, 共[%d]个视频", len(r)))
 	return r
 }
-func (m *Mod) GetVideoLink() {
+func (m *Mod) getVideoM3U8() {
 
 }
 func (m *Mod) t_网站测试(链接 string) string {
@@ -156,7 +173,7 @@ func (m *Mod) t_网站测试(链接 string) string {
 		// 跳转
 		主页 := e.Attr("content")[8:]
 		主页 = strings.Replace(主页, "http://", "https://", 1)
-		m.w_警告(fmt.Sprintf("跳转至[%s]", 主页))
+		m.w_警告(fmt.Sprintf("@[%s]", 主页))
 		爬虫.Visit(主页)
 	})
 	爬虫.OnHTML("meta[name=\"renderer\"]", func(e *colly.HTMLElement) {

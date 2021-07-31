@@ -33,12 +33,12 @@ func (mc *MyColor) Init() {
 		mc.输出锁.Lock()
 		当前时间 := float64(time.Now().UnixNano()) / 1000000000
 		if mc.上次调用时间 < 0 {
-			color.Info.Print("-.  ")
+			color.Info.Print("-.    ")
 			mc.上次调用时间 = 当前时间
 		} else {
 			上次用时 := 当前时间 - mc.上次调用时间
 			mc.上次调用时间 = 当前时间
-			color.Info.Printf("%.2f", 上次用时)
+			color.Info.Printf("%.4f", 上次用时)
 		}
 		fmt.Print("^")
 		color.Primary.Printf("%s", mc.modName)
@@ -46,7 +46,7 @@ func (mc *MyColor) Init() {
 			color.Warn.Println("...")
 			return
 		}
-		color.LightMagenta.Printf("%c>", 字符)
+		color.LightMagenta.Printf("%c:", 字符)
 	}
 	需要换行 := func(s string) bool {
 		a := strings.Index(s, "\n")
