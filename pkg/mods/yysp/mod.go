@@ -106,7 +106,7 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 	goLock := sync.WaitGroup{}
 	爬虫.OnHTML(`li>a[target="_blank"]`, func(e *colly.HTMLElement) {
 		link := m.主站 + strings.TrimSpace(e.Attr("href"))
-		title := strings.TrimSpace(e.Attr("title"))
+		title := strings.ReplaceAll(strings.TrimSpace(e.Attr("title")), "\n", " ")
 		img := m.主站 + strings.TrimSpace(e.ChildAttr("img", "src"))
 		// m.i_信息(fmt.Sprintf("l:%s t:%s i:%s", link, title, img))
 		go func() {

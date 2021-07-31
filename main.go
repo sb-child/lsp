@@ -1,9 +1,9 @@
 package main
 
 import (
-	"crypto/rand"
 	"flag"
 	"fmt"
+	"math/rand"
 	_ "mods/miya"
 	mods "mods/modio"
 	"mods/mtools"
@@ -14,6 +14,10 @@ import (
 	"github.com/gookit/color"
 )
 
+const (
+	RAND_LETTERS = "1qaz2wsx3edc4rfv5tgb6yhn7ujm8ik9ol0pQAZWSXEDCRFVTGBYHNUJMIKOLP"
+)
+
 type task struct {
 	mod           *mods.ModuleIO
 	tags          []string
@@ -22,9 +26,11 @@ type task struct {
 }
 
 func getDownloadDir() string {
-	randBytes := make([]byte, 16)
-	rand.Reader.Read(randBytes)
-	return fmt.Sprintf("v_auto_%x", randBytes)
+	rands := ""
+	for i := 0; i < 16; i++ {
+		rands += string(RAND_LETTERS[rand.Intn(len(RAND_LETTERS))])
+	}
+	return fmt.Sprintf("v_auto_%s", rands)
 }
 
 func main() {
@@ -89,7 +95,6 @@ func main() {
 func run(t task) {
 	mod := t.mod
 	dld_dir := t.dir
-	// tags := t.tags
 	mc := mtools.NewMyColor((*mod).ModName())
 	(*mod).OnSucc(mc.Succ)
 	(*mod).OnInfo(mc.Info)
@@ -103,6 +108,7 @@ func run(t task) {
 	}
 	fmt.Println("正在获取分类...")
 	tags := (*mod).GetAllTags()
+	fmt.Printf("共[%d]个\n", len(tags))
 	if t.get_tags_only {
 		for k, v := range tags {
 			fmt.Print("分类[")
@@ -117,17 +123,22 @@ func run(t task) {
 		_, ok := tags[s]
 		return ok
 	}
-	
+	tags_temp := make(map[string]struct{})
 	for _, v := range t.tags {
 		if !_checkTag(v) {
 			fmt.Printf("[%s]不属于任何一个分类\n", v)
 			os.Exit(10)
 			return
 		}
+		if _, ok := tags_temp[v]; ok {
+			fmt.Printf("重复分类[%s]\n", v)
+			os.Exit(10)
+			return
+		}
+		tags_temp[v] = struct{}{}
 	}
 	fmt.Println("初始化完成, 获取视频列表...")
 	r := (*mod).GetVideos(t.tags)
-	color.Success.Printf("共获取到[%d]个视频\n", len(r))
 	if len(dld_dir) == 0 {
 		for k, v := range r {
 			fmt.Print("[")
@@ -135,10 +146,10 @@ func run(t task) {
 			fmt.Print("]标题: ")
 			color.Yellow.Print(v.Title)
 			fmt.Print("\n 链接: ")
-			color.Cyan.Println(v.Link)
+			color.Blue.Println(v.Link)
 		}
-	} else {
-		fmt.Printf("将下载到[%s]目录\n", dld_dir)
+		return
 	}
-
+	fmt.Printf("将下载到[%s]目录\n", dld_dir)
+	os.Mkdir(dld_dir, os.ModeDir)
 }
