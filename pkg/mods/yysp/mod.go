@@ -32,7 +32,7 @@ func (m *Mod) ModDesc() string {
 func (m *Mod) ModName() string {
 	return MOD_NAME
 }
-func (m *Mod) makeSpider() *colly.Collector {
+func (m *Mod) makeSpider(async bool) *colly.Collector {
 	m._爬虫报错函数 = func(r *colly.Response, err error) {
 		m.e_报错(fmt.Sprintf("*bot [%s]![%d]: %s", r.Request.URL.String(), r.StatusCode, err.Error()))
 	}
@@ -42,7 +42,12 @@ func (m *Mod) makeSpider() *colly.Collector {
 	m._爬虫回应函数 = func(r *colly.Response) {
 		m.s_成功(fmt.Sprintf("*bot [%s]>[%d]", r.Request.URL.String(), r.StatusCode))
 	}
-	爬虫 := tools.CollyCollector()
+	var 爬虫 *colly.Collector
+	if async {
+		爬虫 = tools.CollyCollector()
+	} else {
+		爬虫 = tools.CollyCollectorSlow()
+	}
 	爬虫.OnError(m._爬虫报错函数)
 	爬虫.OnRequest(m._爬虫请求函数)
 	爬虫.OnResponse(m._爬虫回应函数)
@@ -76,7 +81,7 @@ func (m *Mod) ResetTags() {
 
 }
 func (m *Mod) GetAllTags() map[string]string {
-	爬虫 := m.makeSpider()
+	爬虫 := m.makeSpider(true)
 	list := make(map[string]string, 0)
 	爬虫.OnHTML(`a[class="1\=0"]`, func(e *colly.HTMLElement) {
 		href := strings.TrimSpace(e.Attr("href"))
@@ -100,7 +105,7 @@ func (m *Mod) tag2url(t string) string {
 
 // GetVideos 获取指定分类或默认分类的视频网页链接
 func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
-	爬虫 := m.makeSpider()
+	爬虫 := m.makeSpider(true)
 	r := make([]mods.VideoContainer, 0)
 	rc := make(chan mods.VideoContainer, 20+10*len(t))
 	goLock := sync.WaitGroup{}
@@ -183,7 +188,7 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 	return r
 }
 func (m *Mod) getVideoM3U8(links []string) (r map[string]string) {
-	爬虫 := m.makeSpider()
+	爬虫 := m.makeSpider(false)
 	urlMap := sync.Map{}
 	爬虫.OnHTML("script", func(e *colly.HTMLElement) {
 		if strings.Count(e.Text, "encrypt") == 0 {
@@ -214,7 +219,7 @@ func (m *Mod) getVideoM3U8(links []string) (r map[string]string) {
 }
 func (m *Mod) t_网站测试(链接 string) string {
 	结果 := ""
-	爬虫 := m.makeSpider()
+	爬虫 := m.makeSpider(true)
 	爬虫.OnHTML("meta[http-equiv=\"refresh\"]", func(e *colly.HTMLElement) {
 		// 跳转
 		主页 := e.Attr("content")[8:]
