@@ -1,10 +1,11 @@
 package modio
 
 type VideoContainer struct {
-	Link  string
-	Title string
-	Img   string
-	Desc  string
+	Link      string
+	VideoLink string
+	Title     string
+	Img       string
+	Desc      string
 }
 
 type ModuleIO interface {

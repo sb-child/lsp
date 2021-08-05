@@ -34,13 +34,13 @@ func (m *Mod) ModName() string {
 }
 func (m *Mod) makeSpider() *colly.Collector {
 	m._爬虫报错函数 = func(r *colly.Response, err error) {
-		m.e_报错(fmt.Sprintf("[%s]![%d]: %s", r.Request.URL.String(), r.StatusCode, err.Error()))
+		m.e_报错(fmt.Sprintf("*bot [%s]![%d]: %s", r.Request.URL.String(), r.StatusCode, err.Error()))
 	}
 	m._爬虫请求函数 = func(r *colly.Request) {
-		m.i_信息(fmt.Sprintf(">[%s]", r.URL.String()))
+		m.i_信息(fmt.Sprintf("*bot >[%s]", r.URL.String()))
 	}
 	m._爬虫回应函数 = func(r *colly.Response) {
-		m.s_成功(fmt.Sprintf("[%s]>[%d]", r.Request.URL.String(), r.StatusCode))
+		m.s_成功(fmt.Sprintf("*bot [%s]>[%d]", r.Request.URL.String(), r.StatusCode))
 	}
 	爬虫 := tools.CollyCollector()
 	爬虫.OnError(m._爬虫报错函数)
@@ -121,15 +121,18 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 		}
 		return
 	}
+	// 预处理
+	processLink := func(ln string) string {
+		ln = strings.ReplaceAll(ln, "detail", "play")
+		ln = strings.ReplaceAll(ln, ".html", "/sid/1/nid/1.html")
+		return ln
+	}
 	爬虫.OnHTML(`li>a[target="_blank"]`, func(e *colly.HTMLElement) {
-		link := m.主站 + strings.TrimSpace(e.Attr("href"))
+		goLock.Add(1)
+		link := m.主站 + strings.TrimSpace(processLink(e.Attr("href")))
 		title := processTitle(e.Attr("title"))
 		img := m.主站 + strings.TrimSpace(e.ChildAttr("img", "src"))
-		// m.i_信息(fmt.Sprintf("l:%s t:%s i:%s", link, title, img))
-		go func() {
-			goLock.Add(1)
-			rc <- mods.VideoContainer{Link: link, Title: title, Desc: "", Img: img}
-		}()
+		rc <- mods.VideoContainer{Link: link, Title: title, Desc: "", Img: img}
 	})
 	go func() {
 		for {
@@ -145,8 +148,10 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 	}()
 	// 分类转链接
 	if len(t) == 0 {
+		// 默认使用推荐视频
 		t = append(t, m.主站)
 	} else {
+		// 使用自定义分类
 		nt := make([]string, 0)
 		for _, v := range t {
 			nt = append(nt, m.tag2url(v))
@@ -160,11 +165,52 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 	爬虫.Wait()
 	m.i_信息("全部获取完成, 等待汇总任务...")
 	goLock.Wait()
+	m.i_信息("获取视频M3U8...")
+	links := make([]string, len(r))
+	for _, v := range r {
+		links = append(links, v.Link)
+	}
+	linksM3U8 := m.getVideoM3U8(links)
+	for k, v := range linksM3U8 {
+		for k2 := range r {
+			if r[k2].Link != k {
+				continue
+			}
+			r[k2].VideoLink = v
+		}
+	}
 	m.s_成功(fmt.Sprintf("汇总完成, 共[%d]个视频", len(r)))
 	return r
 }
-func (m *Mod) getVideoM3U8() {
-
+func (m *Mod) getVideoM3U8(links []string) (r map[string]string) {
+	爬虫 := m.makeSpider()
+	urlMap := sync.Map{}
+	爬虫.OnHTML("script", func(e *colly.HTMLElement) {
+		if strings.Count(e.Text, "encrypt") == 0 {
+			return
+		}
+		finds := tools.UrlLinkMatch().FindStringSubmatch(e.Text)
+		if len(finds) == 0 {
+			urlMap.Store(e.Request.URL.String(), "")
+			return
+		}
+		m3u8Url := finds[1]
+		m3u8Url = strings.ReplaceAll(m3u8Url, "\\", "")
+		urlMap.Store(e.Request.URL.String(), m3u8Url)
+	})
+	for _, v := range links {
+		爬虫.Visit(v)
+	}
+	爬虫.Wait()
+	r = make(map[string]string, len(links))
+	for _, v := range links {
+		u, ok := urlMap.Load(v)
+		if !ok {
+			continue
+		}
+		r[v] = u.(string)
+	}
+	return
 }
 func (m *Mod) t_网站测试(链接 string) string {
 	结果 := ""

@@ -148,8 +148,10 @@ func run(t task) {
 			color.Cyan.Printf("%d", k)
 			fmt.Print("]: ")
 			color.Yellow.Print(v.Title)
-			fmt.Print("\n ^ ")
+			fmt.Print("\n L ^ ")
 			color.Blue.Println(v.Link)
+			fmt.Print(" V ^ ")
+			color.Green.Println(v.VideoLink)
 		}
 		return
 	}
