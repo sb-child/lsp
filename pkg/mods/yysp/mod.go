@@ -201,6 +201,7 @@ func (m *Mod) getVideoM3U8(links []string) (r map[string]string) {
 		}
 		m3u8Url := finds[1]
 		m3u8Url = strings.ReplaceAll(m3u8Url, "\\", "")
+		m3u8Url, _ = tools.FindVideoSource(m3u8Url)
 		urlMap.Store(e.Request.URL.String(), m3u8Url)
 	})
 	for _, v := range links {
