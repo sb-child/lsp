@@ -1,14 +1,15 @@
 package mtools
 
 import (
+	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
 	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
-
-	"github.com/wumansgy/goEncrypt"
 )
 
 // regex
@@ -46,7 +47,7 @@ func init() {
 	tagLinkMatch, _ = regexp.Compile(`/index\.php/vod/type/id/(.*?).html`)
 	// private
 	ddyunboContentMatch, _ = regexp.Compile(`var content = "(.*?)";`)
-	ddyunboKeyMatch, _ = regexp.Compile(`var bytes =  CryptoJS.AES.decrypt(content, '(.*?)');`)
+	ddyunboKeyMatch, _ = regexp.Compile(`CryptoJS.AES.decrypt\(content, '(.*?)'\);`)
 	// end of private
 }
 
@@ -64,16 +65,34 @@ func UrlGetToStr(url string) string {
 	}
 	return string(b)
 }
+func _PKCS7UnPadding(pt []byte) []byte {
+	length := len(pt)
+	unp := int(pt[length-1])
+	return pt[:(length - unp)]
+}
+func _PaddingLeft(ori []byte, pad byte, length int) []byte {
+	if len(ori) >= length {
+		return ori[:length]
+	}
+	pads := bytes.Repeat([]byte{pad}, length-len(ori))
+	return append(pads, ori...)
+}
 func _AESDecryptForDdyunbo(s, key string) string {
-	// aes.NewCipher(key)
 	out, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
 		return ""
 	}
-	dec, err := goEncrypt.AesCbcDecrypt(out, []byte(key), []byte(""))
+	// padding for key./
+	bkey := _PaddingLeft([]byte(key), '0', 16)
+	// decrypt
+	akey, err := aes.NewCipher(bkey)
 	if err != nil {
 		return ""
 	}
+	decrypter := cipher.NewCBCDecrypter(akey, bkey)
+	dec := make([]byte, len(out))
+	decrypter.CryptBlocks(dec, out)
+	dec = _PKCS7UnPadding(dec)
 	return string(dec)
 }
 func DecryptMethodForDdyunbo(html string) (link string) {
@@ -96,7 +115,13 @@ func FindVideoSource(old string) (dir string, domain string) {
 		// m3u8url = 'https://xxx.xx/xxx/xxx.m3u8'
 		fmt.Println(old)
 		fmt.Println(result)
-		dir = M3U8UrlLinkMatch().FindStringSubmatch(result)[1]
+		re2 := M3U8UrlLinkMatch().FindStringSubmatch(result)
+		if len(re2) == 0 {
+			content := DecryptMethodForDdyunbo(result)
+			fmt.Println("[:" + content)
+			return
+		}
+		dir = re2[1]
 		return
 	}
 	// "url":"https://xxx.xx/xxx/xxx.m3u8"
