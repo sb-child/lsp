@@ -2,14 +2,13 @@ package mtools
 
 import (
 	"bytes"
-	"crypto/aes"
-	"crypto/cipher"
-	"encoding/base64"
 	"fmt"
 	"io/ioutil"
 	"net/http"
 	"regexp"
 	"strings"
+
+	openssl "github.com/Luzifer/go-openssl/v4"
 )
 
 // regex
@@ -74,41 +73,22 @@ func _PaddingLeft(ori []byte, pad byte, length int) []byte {
 }
 
 func _AESDecryptForDdyunbo(s, k string) string {
-	out, err := base64.StdEncoding.DecodeString(s)
+	o := openssl.New()
+	dec, err := o.DecryptBytes(k, []byte(s), openssl.BytesToKeyMD5)
 	if err != nil {
 		return ""
-	}
-	// out := []byte(s)
-	key := _PaddingLeft([]byte(k), '0', 32)
-	akey, err := aes.NewCipher([]byte(key))
-	if err != nil {
-		fmt.Println(err)
-	}
-	gcm, err := cipher.NewGCM(akey)
-	if err != nil {
-		fmt.Println(err)
-	}
-	nonceSize := gcm.NonceSize()
-	if len(out) < nonceSize {
-		return ""
-	}
-	var nonce []byte
-	nonce, out = out[:nonceSize], out[nonceSize:]
-	dec, err := gcm.Open(nil, nonce, out, nil)
-	if err != nil {
-		fmt.Println(err)
 	}
 	return string(dec)
 }
 func DecryptMethodForDdyunbo(html string) (link string) {
-	// defer func() {
-	// 	rec := recover()
-	// 	if rec != nil {
-	// 		fmt.Println("解密模块内部错误:")
-	// 		fmt.Println(rec)
-	// 		link = ""
-	// 	}
-	// }()
+	defer func() {
+		rec := recover()
+		if rec != nil {
+			fmt.Println("解密模块内部错误:")
+			fmt.Println(rec)
+			link = ""
+		}
+	}()
 	content := ddyunboContentMatch.FindStringSubmatch(html)[1]
 	key := ddyunboKeyMatch.FindStringSubmatch(html)[1]
 	r := _AESDecryptForDdyunbo(content, key)
@@ -129,9 +109,11 @@ func FindVideoSource(old string) (dir string, domain string) {
 		// fmt.Println(old)
 		// fmt.Println(result)
 		re2 := M3U8UrlLinkMatch().FindStringSubmatch(result)
+		// fallback to ddyunbo
 		if len(re2) == 0 {
 			content := DecryptMethodForDdyunbo(result)
-			fmt.Println("[:" + content)
+			re3 := UrlLinkMatch().FindStringSubmatch(content)
+			dir = domain + re3[1]
 			return
 		}
 		dir = re2[1]

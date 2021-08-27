@@ -3,6 +3,7 @@ module mods/mtools
 go 1.16
 
 require (
+	github.com/Luzifer/go-openssl/v4 v4.1.0
 	github.com/PuerkitoBio/goquery v1.7.0 // indirect
 	github.com/antchfx/htmlquery v1.2.3 // indirect
 	github.com/antchfx/xmlquery v1.3.6 // indirect
