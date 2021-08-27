@@ -65,11 +65,6 @@ func UrlGetToStr(url string) string {
 	}
 	return string(b)
 }
-func _PKCS7UnPadding(pt []byte) []byte {
-	length := len(pt)
-	unp := int(pt[length-1])
-	return pt[:(length - unp)]
-}
 func _PaddingLeft(ori []byte, pad byte, length int) []byte {
 	if len(ori) >= length {
 		return ori[:length]
@@ -78,37 +73,42 @@ func _PaddingLeft(ori []byte, pad byte, length int) []byte {
 	return append(pads, ori...)
 }
 
-func _AESDecryptForDdyunbo(s, key string) string {
+func _AESDecryptForDdyunbo(s, k string) string {
 	out, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
 		return ""
 	}
-	// padding for key
-	bkey := _PaddingLeft([]byte(key), '0', 32)
-	akey, err := aes.NewCipher(bkey)
+	// out := []byte(s)
+	key := _PaddingLeft([]byte(k), '0', 32)
+	akey, err := aes.NewCipher([]byte(key))
 	if err != nil {
+		fmt.Println(err)
+	}
+	gcm, err := cipher.NewGCM(akey)
+	if err != nil {
+		fmt.Println(err)
+	}
+	nonceSize := gcm.NonceSize()
+	if len(out) < nonceSize {
 		return ""
 	}
-	// cipher and iv
-	iv := out[8 : akey.BlockSize()+8]
-	out = out[akey.BlockSize()+8:]
-	// fmt.Println(len(iv))
-	// decrypt
-	decrypter := cipher.NewCBCDecrypter(akey, iv)
-	dec := make([]byte, len(out))
-	decrypter.CryptBlocks(dec, out)
-	dec = _PKCS7UnPadding(dec)
+	var nonce []byte
+	nonce, out = out[:nonceSize], out[nonceSize:]
+	dec, err := gcm.Open(nil, nonce, out, nil)
+	if err != nil {
+		fmt.Println(err)
+	}
 	return string(dec)
 }
 func DecryptMethodForDdyunbo(html string) (link string) {
-	defer func() {
-		rec := recover()
-		if rec != nil {
-			fmt.Println("解密模块内部错误:")
-			fmt.Println(rec)
-			link = ""
-		}
-	}()
+	// defer func() {
+	// 	rec := recover()
+	// 	if rec != nil {
+	// 		fmt.Println("解密模块内部错误:")
+	// 		fmt.Println(rec)
+	// 		link = ""
+	// 	}
+	// }()
 	content := ddyunboContentMatch.FindStringSubmatch(html)[1]
 	key := ddyunboKeyMatch.FindStringSubmatch(html)[1]
 	r := _AESDecryptForDdyunbo(content, key)
