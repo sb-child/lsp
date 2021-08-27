@@ -38,7 +38,15 @@ func (mc *MyColor) Init() {
 		} else {
 			上次用时 := 当前时间 - mc.上次调用时间
 			mc.上次调用时间 = 当前时间
-			color.Info.Printf("%.4f", 上次用时)
+			var pm interface{ Printf(string, ...interface{}) }
+			if 上次用时 < 1 {
+				pm = color.Info
+			} else if 上次用时 < 3 {
+				pm = color.FgYellow
+			} else {
+				pm = color.FgRed
+			}
+			pm.Printf("%.4f", 上次用时)
 		}
 		fmt.Print("^")
 		color.Primary.Printf("%s", mc.modName)

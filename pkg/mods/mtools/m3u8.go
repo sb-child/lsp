@@ -77,25 +77,38 @@ func _PaddingLeft(ori []byte, pad byte, length int) []byte {
 	pads := bytes.Repeat([]byte{pad}, length-len(ori))
 	return append(pads, ori...)
 }
+
 func _AESDecryptForDdyunbo(s, key string) string {
 	out, err := base64.StdEncoding.DecodeString(s)
 	if err != nil {
 		return ""
 	}
-	// padding for key./
-	bkey := _PaddingLeft([]byte(key), '0', 16)
-	// decrypt
+	// padding for key
+	bkey := _PaddingLeft([]byte(key), '0', 32)
 	akey, err := aes.NewCipher(bkey)
 	if err != nil {
 		return ""
 	}
-	decrypter := cipher.NewCBCDecrypter(akey, bkey)
+	// cipher and iv
+	iv := out[8 : akey.BlockSize()+8]
+	out = out[akey.BlockSize()+8:]
+	// fmt.Println(len(iv))
+	// decrypt
+	decrypter := cipher.NewCBCDecrypter(akey, iv)
 	dec := make([]byte, len(out))
 	decrypter.CryptBlocks(dec, out)
 	dec = _PKCS7UnPadding(dec)
 	return string(dec)
 }
 func DecryptMethodForDdyunbo(html string) (link string) {
+	defer func() {
+		rec := recover()
+		if rec != nil {
+			fmt.Println("解密模块内部错误:")
+			fmt.Println(rec)
+			link = ""
+		}
+	}()
 	content := ddyunboContentMatch.FindStringSubmatch(html)[1]
 	key := ddyunboKeyMatch.FindStringSubmatch(html)[1]
 	r := _AESDecryptForDdyunbo(content, key)
@@ -113,8 +126,8 @@ func FindVideoSource(old string) (dir string, domain string) {
 	re1 := UrlLinkMatch().FindStringSubmatch(result)
 	if len(re1) == 0 {
 		// m3u8url = 'https://xxx.xx/xxx/xxx.m3u8'
-		fmt.Println(old)
-		fmt.Println(result)
+		// fmt.Println(old)
+		// fmt.Println(result)
 		re2 := M3U8UrlLinkMatch().FindStringSubmatch(result)
 		if len(re2) == 0 {
 			content := DecryptMethodForDdyunbo(result)
