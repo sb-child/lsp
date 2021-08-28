@@ -150,12 +150,17 @@ func run(t task) {
 			color.Yellow.Print(v.Title)
 			fmt.Print("\n L ^ ")
 			color.Blue.Println(v.Link)
+			fmt.Print(" I ^ ")
+			color.Red.Println(v.Img)
 			fmt.Print(" V ^ ")
 			color.Green.Println(v.VideoLink)
+			fmt.Print(" D ^ ")
+			color.Comment.Println(v.Desc)
 		}
 		return
 	}
 	// 输出下载路径, 视频个数. 创建目录
 	fmt.Printf("准备下载[%s]<-[%d]\n", dld_dir, len(r))
 	os.Mkdir(dld_dir, os.ModePerm)
+	// 下载视频
 }

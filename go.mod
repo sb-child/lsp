@@ -1,6 +1,6 @@
-module main
+module github.com/sb-child/lsp
 
-go 1.16
+go 1.17
 
 replace mods/modio => ./pkg/mods/modio
 
@@ -11,7 +11,6 @@ replace mods/miya => ./pkg/mods/miya
 replace mods/yysp => ./pkg/mods/yysp
 
 require (
-	github.com/Luzifer/go-openssl/v4 v4.1.0 // indirect
 	github.com/antchfx/xpath v1.2.0 // indirect
 	github.com/gojek/valkyrie v0.0.0-20190210220504-8f62c1e7ba45 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
@@ -27,4 +26,12 @@ require (
 	mods/modio v0.0.0-00010101000000-000000000000
 	mods/mtools v0.0.0-00010101000000-000000000000
 	mods/yysp v0.0.0-00010101000000-000000000000
+)
+
+require (
+	github.com/andybalholm/cascadia v1.2.0 // indirect
+	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/pkg/errors v0.9.1 // indirect
+	github.com/pmezard/go-difflib v1.0.0 // indirect
+	github.com/stretchr/objx v0.1.0 // indirect
 )

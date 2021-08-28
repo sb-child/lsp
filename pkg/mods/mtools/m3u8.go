@@ -1,7 +1,6 @@
 package mtools
 
 import (
-	"bytes"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -22,7 +21,10 @@ var (
 // private
 var (
 	ddyunboContentMatch,
-	ddyunboKeyMatch *regexp.Regexp
+	ddyunboKeyMatch,
+	urlLink2Match,
+	ddyunboPlaylistMatch,
+	ddyunboMainMatch *regexp.Regexp
 )
 
 // end of private
@@ -45,8 +47,11 @@ func init() {
 	m3u8UrlLinkMatch, _ = regexp.Compile("m3u8url = '(.*?)'")
 	tagLinkMatch, _ = regexp.Compile(`/index\.php/vod/type/id/(.*?).html`)
 	// private
+	urlLink2Match, _ = regexp.Compile(`"url":"(.*?)","url_next"`)
 	ddyunboContentMatch, _ = regexp.Compile(`var content = "(.*?)";`)
 	ddyunboKeyMatch, _ = regexp.Compile(`CryptoJS.AES.decrypt\(content, '(.*?)'\);`)
+	ddyunboPlaylistMatch, _ = regexp.Compile(`'\[\{"url":"(.*?)"\}\]'`)
+	ddyunboMainMatch, _ = regexp.Compile(`var main = "(.*?)"`)
 	// end of private
 }
 
@@ -64,14 +69,6 @@ func UrlGetToStr(url string) string {
 	}
 	return string(b)
 }
-func _PaddingLeft(ori []byte, pad byte, length int) []byte {
-	if len(ori) >= length {
-		return ori[:length]
-	}
-	pads := bytes.Repeat([]byte{pad}, length-len(ori))
-	return append(pads, ori...)
-}
-
 func _AESDecryptForDdyunbo(s, k string) string {
 	o := openssl.New()
 	dec, err := o.DecryptBytes(k, []byte(s), openssl.BytesToKeyMD5)
@@ -85,8 +82,7 @@ func DecryptMethodForDdyunbo(html string) (link string) {
 		rec := recover()
 		if rec != nil {
 			fmt.Println("解密模块内部错误:")
-			fmt.Println(rec)
-			link = ""
+			panic(rec)
 		}
 	}()
 	content := ddyunboContentMatch.FindStringSubmatch(html)[1]
@@ -95,6 +91,9 @@ func DecryptMethodForDdyunbo(html string) (link string) {
 	return r
 }
 func FindVideoSource(old string) (dir string, domain string) {
+	// defer func() {
+	// 	fmt.Printf("dir=%s domain=%s\n", dir, domain)
+	// }()
 	// https://xxx.xx/xxx/xxx.m3u8
 	domain = DomainMatch().FindStringSubmatch(old)[1]
 	dir = old
@@ -103,12 +102,16 @@ func FindVideoSource(old string) (dir string, domain string) {
 	}
 	// https://xxx.xx/xxx/xxx
 	result := UrlGetToStr(old)
-	re1 := UrlLinkMatch().FindStringSubmatch(result)
+	re1 := urlLink2Match.FindStringSubmatch(result)
 	if len(re1) == 0 {
+		// var main = "http://xxx.xx/xxx/xxx.m3u8?xxx"
+		re4 := ddyunboMainMatch.FindStringSubmatch(result)
+		if len(re4) != 0 {
+			dir = domain + re4[1]
+			return
+		}
 		// m3u8url = 'https://xxx.xx/xxx/xxx.m3u8'
-		// fmt.Println(old)
-		// fmt.Println(result)
-		re2 := M3U8UrlLinkMatch().FindStringSubmatch(result)
+		re2 := ddyunboPlaylistMatch.FindStringSubmatch(result)
 		// fallback to ddyunbo
 		if len(re2) == 0 {
 			content := DecryptMethodForDdyunbo(result)
@@ -120,7 +123,7 @@ func FindVideoSource(old string) (dir string, domain string) {
 		return
 	}
 	// "url":"https://xxx.xx/xxx/xxx.m3u8"
-	dir = domain + re1[1]
+	dir = domain + strings.ReplaceAll(re1[1], "\\", "")
 	return
 }
 

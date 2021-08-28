@@ -19,7 +19,13 @@
 ## [python分支直达链接](../../tree/python)
 ## 这个分支是Golang版本, 还在开发
 
-<sub>本项目部分代码<sub>~~被迫~~</sub>使用[新型幼女式中文命名方案](https://github.com/RimoChan/), 使标识符简洁直观大方, 方便他人接手维护!</sub>
+~~<sub>_<sub>_<sub>本项目部分代码<sub>被迫</sub>使用[新型幼女式中文命名方案](https://github.com/RimoChan/), 使标识符简洁直观大方, 方便他人接手维护!</sub>_</sub>_</sub>~~
+
+# TODO
++ [ ] miya(蜜芽) 基本功能
++ [x] yysp(夜夜视频) 基本功能
++ [ ] m3u8解析
++ [ ] m3u8下载
 
 <!-- # 快速入手
 + 安卓手机用户, 可使用`termux`等终端模拟器, 按照linux用户的步骤部署环境并运行.

@@ -1,6 +1,6 @@
 module mods/mtools
 
-go 1.16
+go 1.17
 
 require (
 	github.com/Luzifer/go-openssl/v4 v4.1.0
