@@ -14,3 +14,12 @@ require (
 	github.com/temoto/robotstxt v1.1.2 // indirect
 	google.golang.org/appengine v1.6.7 // indirect
 )
+
+require (
+	github.com/andybalholm/cascadia v1.2.0 // indirect
+	github.com/antchfx/xpath v1.1.10 // indirect
+	github.com/golang/groupcache v0.0.0-20200121045136-8c9f03a8e57e // indirect
+	github.com/golang/protobuf v1.3.1 // indirect
+	golang.org/x/net v0.0.0-20210614182718-04defd469f4e // indirect
+	golang.org/x/text v0.3.6 // indirect
+)

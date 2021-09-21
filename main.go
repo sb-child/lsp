@@ -92,6 +92,26 @@ func main() {
 		get_tags_only: 仅获取全部标签,
 	})
 }
+
+func printVideoList(video []mods.VideoContainer) {
+	for k, v := range video {
+		fmt.Print("[")
+		color.Cyan.Printf("%d", k)
+		fmt.Print("]: ")
+		color.Yellow.Print(v.Title)
+		fmt.Print("\n L ^ ")
+		color.Blue.Println(v.Link)
+		fmt.Print(" I ^ ")
+		color.Red.Println(v.Img)
+		fmt.Print(" V ^ ")
+		color.Green.Println(v.VideoLink)
+		fmt.Print(" D ^ ")
+		color.Comment.Println(v.Desc)
+		// md := mtools.M3U8Decoder{}
+		// md.Init(v.VideoLink)
+	}
+}
+
 func run(t task) {
 	// 初始化
 	mod := t.mod
@@ -139,28 +159,20 @@ func run(t task) {
 		}
 		tags_temp[v] = struct{}{}
 	}
+	// === 初始化完成 ===
 	// 获取视频列表
 	fmt.Println("获取视频列表...")
 	r := (*mod).GetVideos(t.tags)
 	if len(dld_dir) == 0 {
-		for k, v := range r {
-			fmt.Print("[")
-			color.Cyan.Printf("%d", k)
-			fmt.Print("]: ")
-			color.Yellow.Print(v.Title)
-			fmt.Print("\n L ^ ")
-			color.Blue.Println(v.Link)
-			fmt.Print(" I ^ ")
-			color.Red.Println(v.Img)
-			fmt.Print(" V ^ ")
-			color.Green.Println(v.VideoLink)
-			fmt.Print(" D ^ ")
-			color.Comment.Println(v.Desc)
-		}
+		printVideoList(r)
 		return
 	}
 	// 输出下载路径, 视频个数. 创建目录
 	fmt.Printf("准备下载[%s]<-[%d]\n", dld_dir, len(r))
 	os.Mkdir(dld_dir, os.ModePerm)
-	// 下载视频
+	// 保存解析结果
+
+	// 提取ts列表
+	fmt.Printf("解析链接...")
+
 }

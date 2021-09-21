@@ -4,10 +4,15 @@ import (
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"path"
 	"regexp"
 	"strings"
 
+	"gorm.io/driver/sqlite"
+	"gorm.io/gorm"
+
 	openssl "github.com/Luzifer/go-openssl/v4"
+	M3U8Lib "github.com/grafov/m3u8"
 )
 
 // regex
@@ -127,8 +132,40 @@ func FindVideoSource(old string) (dir string, domain string) {
 	return
 }
 
+type VideoDatabase struct {
+	dir string
+	db  *gorm.DB
+}
+
+func (vdb *VideoDatabase) Init(dir string) error {
+	vdb.dir = path.Join(dir, "_lsp.db")
+	db, err := gorm.Open(sqlite.Open(vdb.dir), &gorm.Config{})
+	if err != nil {
+		panic("failed to connect database")
+	}
+	
+}
+
 type M3U8Decoder struct {
 }
 
-func (d *M3U8Decoder) Init() {
+func (d *M3U8Decoder) Init(m3u8url string) error {
+	m3u8Content := UrlGetToStr(m3u8url)
+	if m3u8Content == "" {
+		return fmt.Errorf("链接下载失败")
+	}
+	m3u8Reader := strings.NewReader(m3u8Content)
+	p, listType, err := M3U8Lib.DecodeFrom(m3u8Reader, true)
+	if err != nil {
+		return fmt.Errorf("m3u8解析失败")
+	}
+	switch listType {
+	case M3U8Lib.MEDIA:
+		mediapl := p.(*M3U8Lib.MediaPlaylist)
+		fmt.Printf("MEDIA %+v\n", mediapl)
+	case M3U8Lib.MASTER:
+		masterpl := p.(*M3U8Lib.MasterPlaylist)
+		fmt.Printf("MASTER %+v\n", masterpl)
+	}
+	return nil
 }

@@ -31,7 +31,13 @@ require (
 require (
 	github.com/andybalholm/cascadia v1.2.0 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
+	github.com/grafov/m3u8 v0.11.1 // indirect
+	github.com/jinzhu/inflection v1.0.0 // indirect
+	github.com/jinzhu/now v1.1.2 // indirect
+	github.com/mattn/go-sqlite3 v1.14.8 // indirect
 	github.com/pkg/errors v0.9.1 // indirect
 	github.com/pmezard/go-difflib v1.0.0 // indirect
 	github.com/stretchr/objx v0.1.0 // indirect
+	gorm.io/driver/sqlite v1.1.4 // indirect
+	gorm.io/gorm v1.21.14 // indirect
 )
