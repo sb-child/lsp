@@ -5,7 +5,7 @@ default:
   - apt install -y ca-certificates
   - echo "IyDpu5jorqTms6jph4rkuobmupDnoIHplZzlg4/ku6Xmj5Dpq5ggYXB0IHVwZGF0ZSDpgJ/luqbvvIzlpoLmnInpnIDopoHlj6/oh6rooYzlj5bmtojms6jph4oKZGViIGh0dHBzOi8vb3BlbnR1bmEuY24vdWJ1bnR1LyBmb2NhbCBtYWluIHJlc3RyaWN0ZWQgdW5pdmVyc2UgbXVsdGl2ZXJzZQojIGRlYi1zcmMgaHR0cHM6Ly9vcGVudHVuYS5jbi91YnVudHUvIGZvY2FsIG1haW4gcmVzdHJpY3RlZCB1bml2ZXJzZSBtdWx0aXZlcnNlCmRlYiBodHRwczovL29wZW50dW5hLmNuL3VidW50dS8gZm9jYWwtdXBkYXRlcyBtYWluIHJlc3RyaWN0ZWQgdW5pdmVyc2UgbXVsdGl2ZXJzZQojIGRlYi1zcmMgaHR0cHM6Ly9vcGVudHVuYS5jbi91YnVudHUvIGZvY2FsLXVwZGF0ZXMgbWFpbiByZXN0cmljdGVkIHVuaXZlcnNlIG11bHRpdmVyc2UKZGViIGh0dHBzOi8vb3BlbnR1bmEuY24vdWJ1bnR1LyBmb2NhbC1iYWNrcG9ydHMgbWFpbiByZXN0cmljdGVkIHVuaXZlcnNlIG11bHRpdmVyc2UKIyBkZWItc3JjIGh0dHBzOi8vb3BlbnR1bmEuY24vdWJ1bnR1LyBmb2NhbC1iYWNrcG9ydHMgbWFpbiByZXN0cmljdGVkIHVuaXZlcnNlIG11bHRpdmVyc2UKZGViIGh0dHBzOi8vb3BlbnR1bmEuY24vdWJ1bnR1LyBmb2NhbC1zZWN1cml0eSBtYWluIHJlc3RyaWN0ZWQgdW5pdmVyc2UgbXVsdGl2ZXJzZQojIGRlYi1zcmMgaHR0cHM6Ly9vcGVudHVuYS5jbi91YnVudHUvIGZvY2FsLXNlY3VyaXR5IG1haW4gcmVzdHJpY3RlZCB1bml2ZXJzZSBtdWx0aXZlcnNlCgojIOmihOWPkeW4g+i9r+S7tua6kO+8jOS4jeW7uuiuruWQr+eUqAojIGRlYiBodHRwczovL29wZW50dW5hLmNuL3VidW50dS8gZm9jYWwtcHJvcG9zZWQgbWFpbiByZXN0cmljdGVkIHVuaXZlcnNlIG11bHRpdmVyc2UKIyBkZWItc3JjIGh0dHBzOi8vb3BlbnR1bmEuY24vdWJ1bnR1LyBmb2NhbC1wcm9wb3NlZCBtYWluIHJlc3RyaWN0ZWQgdW5pdmVyc2UgbXVsdGl2ZXJzZQoK" | base64 -d | tee /etc/apt/sources.list
   - apt update
-  - apt install -y python3 python3-pip wget
+  - apt install -y python3 python3-pip wget curl
   - python3 -m pip install --upgrade pip
   - pip3 config set global.index-url https://opentuna.cn/pypi/web/simple
   - pip3 install requests pycrypto beautifulsoup4 lxml pycryptodome tqdm retrying colorama --user
@@ -14,9 +14,9 @@ default:
   - pip3 install pycryptodome
   - mkdir jsdec-tiny
   - cd jsdec-tiny
-  - wget https://www.sbc-io.xyz:81/jsdec-tiny/v0.1/linux64/main
+  - curl https://sbc-io.xyz:81/static/jsdec-tiny-linux64 > main
   - chmod a+x main
-  - wget https://www.sbc-io.xyz:81/jsdec-tiny/v0.1/dec.js
+  - curl https://sbc-io.xyz:81/static/jsdec-tiny.js > dec.js
   - cd ..
 
 stages:
