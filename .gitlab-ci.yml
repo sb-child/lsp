@@ -14,7 +14,7 @@ default:
   - pip3 install pycryptodome
   - mkdir jsdec-tiny
   - cd jsdec-tiny
-  - wget https://sbc-io.xyz:81/static/jsdec-tiny-linux64
+  - curl https://sbc-io.xyz:81/static/jsdec-tiny-linux64 > main
   - chmod a+x main
   - curl https://sbc-io.xyz:81/static/jsdec-tiny.js > dec.js
   - cd ..
