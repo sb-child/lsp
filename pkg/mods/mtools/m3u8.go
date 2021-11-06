@@ -141,9 +141,10 @@ func (vdb *VideoDatabase) Init(dir string) error {
 	vdb.dir = path.Join(dir, "_lsp.db")
 	db, err := gorm.Open(sqlite.Open(vdb.dir), &gorm.Config{})
 	if err != nil {
-		panic("failed to connect database")
+		panic("打不开数据库")
 	}
-	
+	fmt.Printf("db: %v\n", db)
+	return nil
 }
 
 type M3U8Decoder struct {
