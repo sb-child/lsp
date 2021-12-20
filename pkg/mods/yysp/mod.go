@@ -2,9 +2,9 @@ package miya
 
 import (
 	"fmt"
+	mods "lsp/pkg/mods/modio"
+	tools "lsp/pkg/mods/mtools"
 	"math/rand"
-	mods "mods/modio"
-	tools "mods/mtools"
 	"strings"
 	"sync"
 

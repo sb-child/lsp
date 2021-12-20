@@ -3,11 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	_ "lsp/pkg/mods/miya"
+	mods "lsp/pkg/mods/modio"
+	"lsp/pkg/mods/mtools"
+	_ "lsp/pkg/mods/yysp"
 	"math/rand"
-	_ "mods/miya"
-	mods "mods/modio"
-	"mods/mtools"
-	_ "mods/yysp"
 	"os"
 	"strings"
 
