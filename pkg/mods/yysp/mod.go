@@ -61,6 +61,9 @@ func (m *Mod) Init() bool {
 	for a := 1; a < 3; a++ {
 		网址列表 = append(网址列表, fmt.Sprintf("https://yylu%d.com", a))
 	}
+	for a := 1; a < 7; a++ {
+		网址列表 = append(网址列表, fmt.Sprintf("https://yyzy%d.com", a))
+	}
 	rand.Shuffle(len(网址列表), func(i, j int) {
 		网址列表[i], 网址列表[j] = 网址列表[j], 网址列表[i]
 	})
