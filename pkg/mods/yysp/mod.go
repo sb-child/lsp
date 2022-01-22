@@ -2,9 +2,9 @@ package miya
 
 import (
 	"fmt"
+	mods "lsp/pkg/mods/modio"
+	tools "lsp/pkg/mods/mtools"
 	"math/rand"
-	mods "mods/modio"
-	tools "mods/mtools"
 	"strings"
 	"sync"
 
@@ -60,6 +60,9 @@ func (m *Mod) Init() bool {
 	}
 	for a := 1; a < 3; a++ {
 		网址列表 = append(网址列表, fmt.Sprintf("https://yylu%d.com", a))
+	}
+	for a := 1; a < 7; a++ {
+		网址列表 = append(网址列表, fmt.Sprintf("https://yyzy%d.com", a))
 	}
 	rand.Shuffle(len(网址列表), func(i, j int) {
 		网址列表[i], 网址列表[j] = 网址列表[j], 网址列表[i]
@@ -168,7 +171,7 @@ func (m *Mod) getVideoM3U8(links []string) (r map[string]string) {
 // GetAllTags 获取所有分类
 func (m *Mod) GetAllTags() map[string]string {
 	爬虫 := m.makeSpider(true)
-	list := make(map[string]string, 0)
+	list := make(map[string]string)
 	爬虫.OnHTML(`a[class="1\=0"]`, func(e *colly.HTMLElement) {
 		href := strings.TrimSpace(e.Attr("href"))
 		// m.i_信息(href)
@@ -222,6 +225,7 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 		rc <- mods.VideoContainer{Link: link, Title: title, Desc: "", Img: img}
 	})
 	go func() {
+		// todo optimize this part
 		for {
 			select {
 			case x, ok := <-rc:
@@ -230,6 +234,8 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 				}
 				r = append(r, x)
 				goLock.Done()
+				// default:
+				// todo
 			}
 		}
 	}()

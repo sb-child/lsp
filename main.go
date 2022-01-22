@@ -3,11 +3,11 @@ package main
 import (
 	"flag"
 	"fmt"
+	_ "lsp/pkg/mods/miya"
+	mods "lsp/pkg/mods/modio"
+	"lsp/pkg/mods/mtools"
+	_ "lsp/pkg/mods/yysp"
 	"math/rand"
-	_ "mods/miya"
-	mods "mods/modio"
-	"mods/mtools"
-	_ "mods/yysp"
 	"os"
 	"strings"
 
@@ -34,7 +34,7 @@ func getDownloadDir() string {
 }
 
 func main() {
-	fmt.Println("[sb-child/lsp]视频爬取工具 Golang版本")
+	fmt.Println("[sb-child/lsp]视频爬取工具 Go版本")
 	var (
 		下载目录    string
 		标签字符串   string
@@ -171,8 +171,26 @@ func run(t task) {
 	fmt.Printf("准备下载[%s]<-[%d]\n", dld_dir, len(r))
 	os.Mkdir(dld_dir, os.ModePerm)
 	// 保存解析结果
-
+	fmt.Println("正在保存到数据库...")
+	for _, v := range r {
+		db := mtools.VideoDatabase{}
+		db.Init(dld_dir)
+		mv := mtools.M3U8Video{
+			Title:     v.Title,
+			Link:      v.Link,
+			Img:       v.Img,
+			Desc:      v.Desc,
+			VideoLink: v.VideoLink,
+		}
+		err := db.Add(&mv)
+		if err != nil {
+			fmt.Printf("保存时发生错误: %s", err.Error())
+		}
+	}
 	// 提取ts列表
 	fmt.Printf("解析链接...")
-
+	db := mtools.VideoDatabase{}
+	db.Init(dld_dir)
+	decoder := mtools.M3U8Decoder{}
+	_ = decoder // todo
 }

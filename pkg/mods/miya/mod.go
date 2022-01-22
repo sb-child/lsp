@@ -1,7 +1,7 @@
 package miya
 
 import (
-	mods "mods/modio"
+	mods "lsp/pkg/mods/modio"
 	// tools "mods/mtools"
 
 	"github.com/gocolly/colly"

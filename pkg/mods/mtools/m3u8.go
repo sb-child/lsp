@@ -137,6 +137,16 @@ type VideoDatabase struct {
 	db  *gorm.DB
 }
 
+type M3U8Video struct {
+	gorm.Model
+	// modio.VideoContainer
+	Link      string // The link to the video
+	VideoLink string // The m3u8 of the video
+	Title     string // The title of the video
+	Img       string // The image of the video
+	Desc      string // The description of the video
+}
+
 func (vdb *VideoDatabase) Init(dir string) error {
 	vdb.dir = path.Join(dir, "_lsp.db")
 	db, err := gorm.Open(sqlite.Open(vdb.dir), &gorm.Config{})
@@ -144,7 +154,13 @@ func (vdb *VideoDatabase) Init(dir string) error {
 		panic("打不开数据库")
 	}
 	fmt.Printf("db: %v\n", db)
+	vdb.db = db
+	db.AutoMigrate(&M3U8Video{})
 	return nil
+}
+
+func (vdb *VideoDatabase) Add(video *M3U8Video) error {
+	return vdb.db.Create(video).Error
 }
 
 type M3U8Decoder struct {
