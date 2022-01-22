@@ -151,9 +151,9 @@ func (vdb *VideoDatabase) Init(dir string) error {
 	vdb.dir = path.Join(dir, "_lsp.db")
 	db, err := gorm.Open(sqlite.Open(vdb.dir), &gorm.Config{})
 	if err != nil {
-		panic("打不开数据库")
+		fmt.Printf("打不开数据库: %s\n", err)
+		return err
 	}
-	fmt.Printf("db: %v\n", db)
 	vdb.db = db
 	db.AutoMigrate(&M3U8Video{})
 	return nil

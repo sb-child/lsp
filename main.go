@@ -36,47 +36,54 @@ func getDownloadDir() string {
 func main() {
 	fmt.Println("[sb-child/lsp]视频爬取工具 Go版本")
 	var (
-		下载目录    string
-		标签字符串   string
-		选中的模块   string
-		仅获取可选模块 bool
-		仅获取视频列表 bool
-		仅获取全部标签 bool
+		downloadDir     string
+		tagList         string
+		selectedMod     string
+		getModList      bool
+		getVideoList    bool
+		getTagList      bool
+		writeToDatabase bool
 	)
-	flag.StringVar(&选中的模块, "mod", "", "指定要加载的模块")
-	flag.BoolVar(&仅获取可选模块, "mods", false, "可选: 获取当前可选模块并终止")
-	flag.StringVar(&下载目录, "dir", getDownloadDir(), "可选: 指定下载目录")
-	flag.StringVar(&标签字符串, "tag", "", "可选: 指定分类(编号)并终止, 用英文逗号分隔, 可指定多个, 否则为默认")
-	flag.BoolVar(&仅获取全部标签, "tags", false, "可选: 获取当前模块中, 全部可用的分类并终止")
-	flag.BoolVar(&仅获取视频列表, "list", false, "可选: 仅拉取视频列表, 不下载")
+	flag.StringVar(&selectedMod, "mod", "", "指定要加载的模块")
+	flag.StringVar(&downloadDir, "dir", getDownloadDir(), "可选: 指定下载目录")
+	flag.StringVar(&tagList, "tag", "", "可选: 指定分类(编号)并终止, 用英文逗号分隔, 否则为默认")
+	flag.BoolVar(&getModList, "mods", false, "可选: 获取当前可选模块并终止")
+	flag.BoolVar(&getTagList, "tags", false, "可选: 获取当前模块中, 全部可用的分类")
+	flag.BoolVar(&getVideoList, "list", false, "可选: 仅获取视频列表, 不保存视频信息")
+	flag.BoolVar(&writeToDatabase, "db", false, "可选: 仅将视频信息写入数据库")
 	flag.Parse()
-	if 下载目录 == "" && !仅获取视频列表 {
+	if downloadDir == "" && !getVideoList {
 		fmt.Println("请指定一个下载目录")
 		os.Exit(4)
 		return
 	}
-	if 仅获取可选模块 {
+	if getVideoList && writeToDatabase {
+		fmt.Println("请去掉 -list 参数以写入数据库")
+		os.Exit(5)
+		return
+	}
+	if getModList {
 		fmt.Println("可用模块:")
 		for k, v := range mods.GetAllModules() {
 			fmt.Printf("模块名[%s] 模块描述[%s]\n", k, (*v).ModDesc())
 		}
 		return
 	}
-	if 选中的模块 == "" {
+	if selectedMod == "" {
 		fmt.Println("请指定一个模块")
 		os.Exit(3)
 		return
 	}
-	if 仅获取视频列表 {
-		下载目录 = ""
+	if getVideoList {
+		downloadDir = ""
 	}
-	模块实例 := mods.GetModule(选中的模块)
+	模块实例 := mods.GetModule(selectedMod)
 	if 模块实例 == nil {
-		fmt.Printf("找不到[%s]模块\n", 选中的模块)
+		fmt.Printf("找不到[%s]模块\n", selectedMod)
 		os.Exit(2)
 		return
 	}
-	_tags := strings.Split(标签字符串, ",")
+	_tags := strings.Split(tagList, ",")
 	标签列表 := make([]string, 0)
 	for _, v := range _tags {
 		if v == "" {
@@ -84,12 +91,12 @@ func main() {
 		}
 		标签列表 = append(标签列表, v)
 	}
-	fmt.Printf("载入[%s]模块...\n", 选中的模块)
+	fmt.Printf("载入[%s]模块...\n", selectedMod)
 	run(task{
 		mod:           模块实例,
 		tags:          标签列表,
-		dir:           下载目录,
-		get_tags_only: 仅获取全部标签,
+		dir:           downloadDir,
+		get_tags_only: getTagList,
 	})
 }
 
@@ -172,9 +179,12 @@ func run(t task) {
 	os.Mkdir(dld_dir, os.ModePerm)
 	// 保存解析结果
 	fmt.Println("正在保存到数据库...")
+	db := mtools.VideoDatabase{}
+	if err := db.Init(dld_dir); err != nil {
+		os.Exit(1)
+		return
+	}
 	for _, v := range r {
-		db := mtools.VideoDatabase{}
-		db.Init(dld_dir)
 		mv := mtools.M3U8Video{
 			Title:     v.Title,
 			Link:      v.Link,
@@ -189,8 +199,6 @@ func run(t task) {
 	}
 	// 提取ts列表
 	fmt.Printf("解析链接...")
-	db := mtools.VideoDatabase{}
-	db.Init(dld_dir)
 	decoder := mtools.M3U8Decoder{}
 	_ = decoder // todo
 }
