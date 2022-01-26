@@ -200,5 +200,5 @@ func run(t task) {
 	// 提取ts列表
 	fmt.Printf("解析链接...")
 	decoder := mtools.M3U8Decoder{}
-	_ = decoder // todo
+	decoder.Init(r[0].VideoLink)
 }

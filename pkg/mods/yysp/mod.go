@@ -57,12 +57,11 @@ func (m *Mod) Init() bool {
 	网址列表 := make([]string, 0)
 	for a := 1; a < 3; a++ {
 		网址列表 = append(网址列表, fmt.Sprintf("https://yyspzy%d.xyz", a))
-	}
-	for a := 1; a < 3; a++ {
 		网址列表 = append(网址列表, fmt.Sprintf("https://yylu%d.com", a))
 	}
 	for a := 1; a < 7; a++ {
 		网址列表 = append(网址列表, fmt.Sprintf("https://yyzy%d.com", a))
+		网址列表 = append(网址列表, fmt.Sprintf("https://www.yyzy%d.com", a))
 	}
 	rand.Shuffle(len(网址列表), func(i, j int) {
 		网址列表[i], 网址列表[j] = 网址列表[j], 网址列表[i]
@@ -146,7 +145,11 @@ func (m *Mod) getVideoM3U8(links []string) (r map[string]string) {
 		}
 		m3u8Url := finds[1]
 		m3u8Url = strings.ReplaceAll(m3u8Url, "\\", "")
-		m3u8Url, domain := tools.FindVideoSource(m3u8Url)
+		m3u8Url, domain, err := tools.FindVideoSource(m3u8Url)
+		if err != nil {
+			m.w_警告(fmt.Sprintf("内容获取失败: [%s] %s", e.Request.URL.String(), err.Error()))
+			return
+		}
 		if !strings.HasPrefix(m3u8Url, "https://") {
 			m3u8Url = domain + "/" + m3u8Url
 		}

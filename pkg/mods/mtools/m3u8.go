@@ -62,17 +62,24 @@ func init() {
 
 // end of regex
 
-func UrlGetToStr(url string) string {
+func UrlGetToStr(url string) (string, error) {
 	hc := http.Client{}
 	r, err := hc.Get(url)
 	if err != nil {
-		return ""
+		return "", err
 	}
 	b, err := ioutil.ReadAll(r.Body)
 	if err != nil {
+		return "", err
+	}
+	return string(b), nil
+}
+func UrlGetToStrMust(url string) string {
+	r, err := UrlGetToStr(url)
+	if err != nil {
 		return ""
 	}
-	return string(b)
+	return r
 }
 func _AESDecryptForDdyunbo(s, k string) string {
 	o := openssl.New()
@@ -95,7 +102,7 @@ func DecryptMethodForDdyunbo(html string) (link string) {
 	r := _AESDecryptForDdyunbo(content, key)
 	return r
 }
-func FindVideoSource(old string) (dir string, domain string) {
+func FindVideoSource(old string) (dir string, domain string, e error) {
 	// defer func() {
 	// 	fmt.Printf("dir=%s domain=%s\n", dir, domain)
 	// }()
@@ -106,7 +113,11 @@ func FindVideoSource(old string) (dir string, domain string) {
 		return
 	}
 	// https://xxx.xx/xxx/xxx
-	result := UrlGetToStr(old)
+	result, err := UrlGetToStr(old)
+	if err != nil {
+		e = err
+		return
+	}
 	re1 := urlLink2Match.FindStringSubmatch(result)
 	if len(re1) == 0 {
 		// var main = "http://xxx.xx/xxx/xxx.m3u8?xxx"
@@ -167,9 +178,9 @@ type M3U8Decoder struct {
 }
 
 func (d *M3U8Decoder) Init(m3u8url string) error {
-	m3u8Content := UrlGetToStr(m3u8url)
-	if m3u8Content == "" {
-		return fmt.Errorf("链接下载失败")
+	m3u8Content, err := UrlGetToStr(m3u8url)
+	if err != nil {
+		return fmt.Errorf("内容获取失败: %s", err.Error())
 	}
 	m3u8Reader := strings.NewReader(m3u8Content)
 	p, listType, err := M3U8Lib.DecodeFrom(m3u8Reader, true)
