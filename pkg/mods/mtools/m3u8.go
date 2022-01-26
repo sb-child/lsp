@@ -12,7 +12,6 @@ import (
 	"gorm.io/gorm"
 
 	openssl "github.com/Luzifer/go-openssl/v4"
-	M3U8Lib "github.com/grafov/m3u8"
 )
 
 // regex
@@ -20,6 +19,8 @@ var (
 	domainMatch,
 	urlLinkMatch,
 	m3u8UrlLinkMatch,
+	m3u8ContentInfoMatch,
+	m3u8TsInfoMatch,
 	tagLinkMatch *regexp.Regexp
 )
 
@@ -43,6 +44,12 @@ func UrlLinkMatch() *regexp.Regexp {
 func M3U8UrlLinkMatch() *regexp.Regexp {
 	return m3u8UrlLinkMatch
 }
+func M3U8ContentInfoMatch() *regexp.Regexp {
+	return m3u8ContentInfoMatch
+}
+func M3U8TsInfoMatch() *regexp.Regexp {
+	return m3u8TsInfoMatch
+}
 func TagLinkMatch() *regexp.Regexp {
 	return tagLinkMatch
 }
@@ -50,6 +57,8 @@ func init() {
 	domainMatch, _ = regexp.Compile("(http[s]?://.*?)/")
 	urlLinkMatch, _ = regexp.Compile("\"url\":\"(.*?)\"")
 	m3u8UrlLinkMatch, _ = regexp.Compile("m3u8url = '(.*?)'")
+	m3u8ContentInfoMatch, _ = regexp.Compile(`(http[s]?://)?(.*?\.m3u8)(\?.*)*`)
+	m3u8TsInfoMatch, _ = regexp.Compile(`(http[s]?://)?(.*?\.ts)(\?.*)*`)
 	tagLinkMatch, _ = regexp.Compile(`/index\.php/vod/type/id/(.*?).html`)
 	// private
 	urlLink2Match, _ = regexp.Compile(`"url":"(.*?)","url_next"`)
@@ -175,25 +184,33 @@ func (vdb *VideoDatabase) Add(video *M3U8Video) error {
 }
 
 type M3U8Decoder struct {
+	content string
 }
 
 func (d *M3U8Decoder) Init(m3u8url string) error {
+	// domain := DomainMatch().FindStringSubmatch(m3u8url)[1]
 	m3u8Content, err := UrlGetToStr(m3u8url)
 	if err != nil {
 		return fmt.Errorf("内容获取失败: %s", err.Error())
 	}
-	m3u8Reader := strings.NewReader(m3u8Content)
-	p, listType, err := M3U8Lib.DecodeFrom(m3u8Reader, true)
-	if err != nil {
-		return fmt.Errorf("m3u8解析失败")
+	d.content = m3u8Content
+	buffer := make([][]string, 0)
+	fmt.Println(d)
+	for _, line := range strings.Split(d.content, "\n") {
+		if strings.HasPrefix(line, "#") {
+			continue
+		}
+		ln := M3U8ContentInfoMatch().FindStringSubmatch(line)
+		if len(ln) != 0 {
+			ln[0] = "m"
+			buffer = append(buffer, ln)
+		}
+		ln = M3U8TsInfoMatch().FindStringSubmatch(line)
+		if len(ln) != 0 {
+			ln[0] = "t"
+			buffer = append(buffer, ln)
+		}
 	}
-	switch listType {
-	case M3U8Lib.MEDIA:
-		mediapl := p.(*M3U8Lib.MediaPlaylist)
-		fmt.Printf("MEDIA %+v\n", mediapl)
-	case M3U8Lib.MASTER:
-		masterpl := p.(*M3U8Lib.MasterPlaylist)
-		fmt.Printf("MASTER %+v\n", masterpl)
-	}
+	fmt.Println(buffer)
 	return nil
 }

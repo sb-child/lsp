@@ -194,11 +194,11 @@ func run(t task) {
 		}
 		err := db.Add(&mv)
 		if err != nil {
-			fmt.Printf("保存时发生错误: %s", err.Error())
+			fmt.Printf("保存时发生错误: %s\n", err.Error())
 		}
 	}
 	// 提取ts列表
-	fmt.Printf("解析链接...")
+	fmt.Println("解析链接...")
 	decoder := mtools.M3U8Decoder{}
 	decoder.Init(r[0].VideoLink)
 }
