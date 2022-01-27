@@ -10,6 +10,8 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gookit/color"
 )
@@ -202,7 +204,7 @@ func run(t task) {
 			Desc:      v.Desc,
 			VideoLink: v.VideoLink,
 		}
-		err := db.Add(&mv)
+		err := db.VideoAdd(&mv)
 		if err != nil {
 			fmt.Printf("保存时发生错误: %s\n", err.Error())
 		}
@@ -217,8 +219,65 @@ func fetchTs(dir string) error {
 		return err
 	}
 	fmt.Println("解析链接...")
-	video, _ := db.Get(1)
-	decoder := mtools.M3U8Decoder{}
-	decoder.Init(video.VideoLink)
+	count, _ := db.VideoLen()
+	t := time.NewTicker(time.Second / 2)
+	defer t.Stop()
+	lock := sync.Mutex{}
+	status := struct {
+		VideoCount int
+		VideoDone  int
+		TsCount    int
+		TsDone     int
+	}{
+		VideoCount: (int)(count),
+		VideoDone:  0,
+		TsCount:    1,
+		TsDone:     1,
+	}
+	go func() {
+		for {
+			<-t.C
+			lock.Lock()
+			fmt.Printf("视频[%d](%d%%): 正在存储[%d]/[%d]: %d%%\n",
+				status.VideoDone,
+				(status.VideoDone*100)/status.VideoCount,
+				status.TsDone,
+				status.TsCount,
+				(status.TsDone*100)/status.TsCount,
+			)
+			lock.Unlock()
+		}
+	}()
+	for i := 1; i < (int)(count); i++ {
+		v, err := db.VideoGet(i)
+		if err != nil {
+			return err
+		}
+		decoder := mtools.M3U8Decoder{}
+		err = decoder.Init(v.VideoLink)
+		if err != nil {
+			return err
+		}
+		tsLen := decoder.Len()
+		for j := 0; j < tsLen; j++ {
+			ts, err := decoder.Get(j)
+			if err != nil {
+				return err
+			}
+			link := ts[1] + ts[2] + ts[3]
+			db.M3U8ContentAdd(&mtools.M3U8Content{
+				VideoID:    int(v.ID),
+				Index:      j,
+				Content:    link,
+				Downloaded: false,
+			})
+			lock.Lock()
+			status.TsCount = tsLen
+			status.TsDone = j + 1
+			status.VideoCount = (int)(count)
+			status.VideoDone = i
+			lock.Unlock()
+		}
+	}
 	return nil
 }
