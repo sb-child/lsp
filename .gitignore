@@ -132,3 +132,5 @@ dmypy.json
 /v_auto_*
 /videos_*
 /videos
+
+.vscode/launch.json

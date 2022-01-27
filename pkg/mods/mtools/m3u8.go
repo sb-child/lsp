@@ -1,6 +1,7 @@
 package mtools
 
 import (
+	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
@@ -57,8 +58,8 @@ func init() {
 	domainMatch, _ = regexp.Compile("(http[s]?://.*?)/")
 	urlLinkMatch, _ = regexp.Compile("\"url\":\"(.*?)\"")
 	m3u8UrlLinkMatch, _ = regexp.Compile("m3u8url = '(.*?)'")
-	m3u8ContentInfoMatch, _ = regexp.Compile(`(http[s]?://)?(.*?\.m3u8)(\?.*)*`)
-	m3u8TsInfoMatch, _ = regexp.Compile(`(http[s]?://)?(.*?\.ts)(\?.*)*`)
+	m3u8ContentInfoMatch, _ = regexp.Compile(`(http[s]?://.*?/)?(.*?\.m3u8)(\?.*)*`)
+	m3u8TsInfoMatch, _ = regexp.Compile(`(http[s]?://.*?/)?(.*?\.ts)(\?.*)*`)
 	tagLinkMatch, _ = regexp.Compile(`/index\.php/vod/type/id/(.*?).html`)
 	// private
 	urlLink2Match, _ = regexp.Compile(`"url":"(.*?)","url_next"`)
@@ -182,35 +183,79 @@ func (vdb *VideoDatabase) Init(dir string) error {
 func (vdb *VideoDatabase) Add(video *M3U8Video) error {
 	return vdb.db.Create(video).Error
 }
+func (vdb *VideoDatabase) Len() (int64, error) {
+	var count int64
+	err := vdb.db.Model(&M3U8Video{}).Count(&count).Error
+	return count, err
+}
+func (vdb *VideoDatabase) Get(id int) (*M3U8Video, error) {
+	var video M3U8Video
+	err := vdb.db.First(&video, id).Error
+	return &video, err
+}
 
 type M3U8Decoder struct {
 	content string
 }
 
 func (d *M3U8Decoder) Init(m3u8url string) error {
-	// domain := DomainMatch().FindStringSubmatch(m3u8url)[1]
+	buffer := make([][]string, 0)
+	ln := M3U8ContentInfoMatch().FindStringSubmatch(m3u8url)
+	if len(ln) == 0 {
+		return errors.New("m3u8 url error")
+	}
+	ln[0] = "m"
+	buffer = append(buffer, ln)
+	err := d.init(&buffer)
+	if err != nil {
+		return err
+	}
+	fmt.Println("->", buffer)
+	return nil
+}
+
+func (d *M3U8Decoder) init(list *[][]string) error {
+	ptr := -1
+	for i, j := range *list {
+		if j[0] == "m" {
+			ptr = i
+		}
+	}
+	if ptr == -1 {
+		return nil
+	}
+	domain := (*list)[ptr][1]
+	m3u8url := domain + (*list)[ptr][2] + (*list)[ptr][3]
+	fmt.Printf("正在获取 %s\n", m3u8url)
 	m3u8Content, err := UrlGetToStr(m3u8url)
 	if err != nil {
-		return fmt.Errorf("内容获取失败: %s", err.Error())
+		return fmt.Errorf("获取失败: %s", err.Error())
 	}
-	d.content = m3u8Content
 	buffer := make([][]string, 0)
-	fmt.Println(d)
-	for _, line := range strings.Split(d.content, "\n") {
+	for _, line := range strings.Split(m3u8Content, "\n") {
 		if strings.HasPrefix(line, "#") {
 			continue
 		}
 		ln := M3U8ContentInfoMatch().FindStringSubmatch(line)
-		if len(ln) != 0 {
+		if ln != nil {
 			ln[0] = "m"
 			buffer = append(buffer, ln)
 		}
 		ln = M3U8TsInfoMatch().FindStringSubmatch(line)
-		if len(ln) != 0 {
+		if ln != nil {
 			ln[0] = "t"
 			buffer = append(buffer, ln)
 		}
 	}
-	fmt.Println(buffer)
-	return nil
+	for _, i := range buffer {
+		if i[1] == "" {
+			i[1] = domain
+		}
+	}
+	buffer = append((*list)[0:ptr], buffer...)
+	if len(*list) >= ptr+1 {
+		buffer = append(buffer, (*list)[ptr+1:]...)
+	}
+	(*list) = buffer
+	return d.init(list)
 }

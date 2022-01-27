@@ -167,6 +167,16 @@ func run(t task) {
 		tags_temp[v] = struct{}{}
 	}
 	// === 初始化完成 ===
+	// check if dld_dir exists
+	if fi, err := os.Stat(dld_dir); (err == nil) && (fi.IsDir()) {
+		err := fetchTs(dld_dir)
+		if err != nil {
+			fmt.Println(err)
+			os.Exit(1)
+			return
+		}
+		return
+	}
 	// 获取视频列表
 	fmt.Println("获取视频列表...")
 	r := (*mod).GetVideos(t.tags)
@@ -198,7 +208,17 @@ func run(t task) {
 		}
 	}
 	// 提取ts列表
+	fetchTs(dld_dir)
+}
+func fetchTs(dir string) error {
+	fmt.Println("读取数据库...")
+	db := mtools.VideoDatabase{}
+	if err := db.Init(dir); err != nil {
+		return err
+	}
 	fmt.Println("解析链接...")
+	video, _ := db.Get(1)
 	decoder := mtools.M3U8Decoder{}
-	decoder.Init(r[0].VideoLink)
+	decoder.Init(video.VideoLink)
+	return nil
 }
