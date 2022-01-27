@@ -179,7 +179,6 @@ func (vdb *VideoDatabase) Init(dir string) error {
 	db.AutoMigrate(&M3U8Video{})
 	return nil
 }
-
 func (vdb *VideoDatabase) Add(video *M3U8Video) error {
 	return vdb.db.Create(video).Error
 }
@@ -195,7 +194,7 @@ func (vdb *VideoDatabase) Get(id int) (*M3U8Video, error) {
 }
 
 type M3U8Decoder struct {
-	content string
+	content [][]string
 }
 
 func (d *M3U8Decoder) Init(m3u8url string) error {
@@ -206,17 +205,16 @@ func (d *M3U8Decoder) Init(m3u8url string) error {
 	}
 	ln[0] = "m"
 	buffer = append(buffer, ln)
-	err := d.init(&buffer)
+	err := d.init(buffer)
 	if err != nil {
 		return err
 	}
-	fmt.Println("->", buffer)
+	d.content = buffer
 	return nil
 }
-
-func (d *M3U8Decoder) init(list *[][]string) error {
+func (d *M3U8Decoder) init(list [][]string) error {
 	ptr := -1
-	for i, j := range *list {
+	for i, j := range list {
 		if j[0] == "m" {
 			ptr = i
 		}
@@ -224,8 +222,8 @@ func (d *M3U8Decoder) init(list *[][]string) error {
 	if ptr == -1 {
 		return nil
 	}
-	domain := (*list)[ptr][1]
-	m3u8url := domain + (*list)[ptr][2] + (*list)[ptr][3]
+	domain := list[ptr][1]
+	m3u8url := domain + list[ptr][2] + list[ptr][3]
 	fmt.Printf("正在获取 %s\n", m3u8url)
 	m3u8Content, err := UrlGetToStr(m3u8url)
 	if err != nil {
@@ -252,10 +250,19 @@ func (d *M3U8Decoder) init(list *[][]string) error {
 			i[1] = domain
 		}
 	}
-	buffer = append((*list)[0:ptr], buffer...)
-	if len(*list) >= ptr+1 {
-		buffer = append(buffer, (*list)[ptr+1:]...)
+	buffer = append(list[0:ptr], buffer...)
+	if len(list) >= ptr+1 {
+		buffer = append(buffer, list[ptr+1:]...)
 	}
-	(*list) = buffer
+	list = buffer
 	return d.init(list)
+}
+func (d *M3U8Decoder) Len() int {
+	return len(d.content)
+}
+func (d *M3U8Decoder) Get(index int) ([]string, error) {
+	if index < 0 || index >= len(d.content) {
+		return nil, errors.New("index out of range")
+	}
+	return d.content[index], nil
 }
