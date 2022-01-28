@@ -169,48 +169,53 @@ func run(t task) {
 		tags_temp[v] = struct{}{}
 	}
 	// === 初始化完成 ===
-	// check if dld_dir exists
-	if fi, err := os.Stat(dld_dir); (err == nil) && (fi.IsDir()) {
-		err := fetchTs(dld_dir)
-		if err != nil {
-			fmt.Println(err)
+	getVideoList := func() {
+		fmt.Println("获取视频列表...")
+		r := (*mod).GetVideos(t.tags)
+		if len(dld_dir) == 0 {
+			printVideoList(r)
+			return
+		}
+		// 输出下载路径, 视频个数. 创建目录
+		fmt.Printf("准备下载[%s]<-[%d]\n", dld_dir, len(r))
+		os.Mkdir(dld_dir, os.ModePerm)
+		// 保存解析结果
+		fmt.Println("正在保存到数据库...")
+		db := mtools.VideoDatabase{}
+		if err := db.Init(dld_dir); err != nil {
 			os.Exit(1)
 			return
 		}
-		return
+		for _, v := range r {
+			mv := mtools.M3U8Video{
+				Title:     v.Title,
+				Link:      v.Link,
+				Img:       v.Img,
+				Desc:      v.Desc,
+				VideoLink: v.VideoLink,
+				Fetched:   false,
+			}
+			err := db.VideoAdd(&mv)
+			if err != nil {
+				fmt.Printf("保存时发生错误: %s\n", err.Error())
+				os.Exit(1)
+				return
+			}
+		}
+	}
+	// check if dld_dir exists
+	if fi, err := os.Stat(dld_dir); (err == nil) && (fi.IsDir()) {
+		goto skip
 	}
 	// 获取视频列表
-	fmt.Println("获取视频列表...")
-	r := (*mod).GetVideos(t.tags)
-	if len(dld_dir) == 0 {
-		printVideoList(r)
-		return
-	}
-	// 输出下载路径, 视频个数. 创建目录
-	fmt.Printf("准备下载[%s]<-[%d]\n", dld_dir, len(r))
-	os.Mkdir(dld_dir, os.ModePerm)
-	// 保存解析结果
-	fmt.Println("正在保存到数据库...")
-	db := mtools.VideoDatabase{}
-	if err := db.Init(dld_dir); err != nil {
+	getVideoList()
+skip:
+	// 提取ts列表
+	if err := fetchTs(dld_dir); err != nil {
+		fmt.Println(err)
 		os.Exit(1)
 		return
 	}
-	for _, v := range r {
-		mv := mtools.M3U8Video{
-			Title:     v.Title,
-			Link:      v.Link,
-			Img:       v.Img,
-			Desc:      v.Desc,
-			VideoLink: v.VideoLink,
-		}
-		err := db.VideoAdd(&mv)
-		if err != nil {
-			fmt.Printf("保存时发生错误: %s\n", err.Error())
-		}
-	}
-	// 提取ts列表
-	fetchTs(dld_dir)
 }
 func fetchTs(dir string) error {
 	fmt.Println("读取数据库...")
@@ -220,8 +225,10 @@ func fetchTs(dir string) error {
 	}
 	fmt.Println("解析链接...")
 	count, _ := db.VideoLen()
-	t := time.NewTicker(time.Second / 2)
+	t := time.NewTicker(time.Second)
+	done := make(chan struct{})
 	defer t.Stop()
+	defer close(done)
 	lock := sync.Mutex{}
 	status := struct {
 		VideoCount int
@@ -236,20 +243,47 @@ func fetchTs(dir string) error {
 	}
 	go func() {
 		for {
-			<-t.C
-			lock.Lock()
-			fmt.Printf("视频[%d](%d%%): 正在存储[%d]/[%d]: %d%%\n",
-				status.VideoDone,
-				(status.VideoDone*100)/status.VideoCount,
-				status.TsDone,
-				status.TsCount,
-				(status.TsDone*100)/status.TsCount,
-			)
-			lock.Unlock()
+			select {
+			case <-done:
+				return
+			case <-t.C:
+				lock.Lock()
+				fmt.Printf("视频[%d](%d%%): 正在存储[%d]/[%d]: %d%%\n",
+					status.VideoDone,
+					(status.VideoDone*100)/status.VideoCount,
+					status.TsDone,
+					status.TsCount,
+					(status.TsDone*100)/status.TsCount,
+				)
+				lock.Unlock()
+			}
 		}
 	}()
+	save := func(decoder mtools.M3U8Decoder, video *mtools.M3U8Video, tsIndex int, tsCount int, videoIndex int, videoCount int) error {
+		ts, err := decoder.Get(tsIndex)
+		if err != nil {
+			return err
+		}
+		link := ts[1] + ts[2] + ts[3]
+		db.M3U8ContentAdd(&mtools.M3U8Content{
+			VideoID:    int(video.ID),
+			Index:      tsIndex,
+			Content:    link,
+			Downloaded: false,
+		})
+		lock.Lock()
+		status.TsCount = tsCount
+		status.TsDone = tsIndex + 1
+		status.VideoCount = videoCount
+		status.VideoDone = videoIndex
+		lock.Unlock()
+		return nil
+	}
 	for i := 1; i < (int)(count); i++ {
 		v, err := db.VideoGet(i)
+		if v.Fetched {
+			continue
+		}
 		if err != nil {
 			return err
 		}
@@ -259,25 +293,11 @@ func fetchTs(dir string) error {
 			return err
 		}
 		tsLen := decoder.Len()
+
 		for j := 0; j < tsLen; j++ {
-			ts, err := decoder.Get(j)
-			if err != nil {
-				return err
-			}
-			link := ts[1] + ts[2] + ts[3]
-			db.M3U8ContentAdd(&mtools.M3U8Content{
-				VideoID:    int(v.ID),
-				Index:      j,
-				Content:    link,
-				Downloaded: false,
-			})
-			lock.Lock()
-			status.TsCount = tsLen
-			status.TsDone = j + 1
-			status.VideoCount = (int)(count)
-			status.VideoDone = i
-			lock.Unlock()
+			save(decoder, v, j, tsLen, i, (int)(count))
 		}
+		db.VideoSetFetched(i, true)
 	}
 	return nil
 }

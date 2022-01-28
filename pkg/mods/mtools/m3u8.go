@@ -8,11 +8,13 @@ import (
 	"path"
 	"regexp"
 	"strings"
+	"sync"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
 
 	openssl "github.com/Luzifer/go-openssl/v4"
+	"github.com/gocolly/colly"
 )
 
 // regex
@@ -22,6 +24,7 @@ var (
 	m3u8UrlLinkMatch,
 	m3u8ContentInfoMatch,
 	m3u8TsInfoMatch,
+	urlDirMatch,
 	tagLinkMatch *regexp.Regexp
 )
 
@@ -51,11 +54,15 @@ func M3U8ContentInfoMatch() *regexp.Regexp {
 func M3U8TsInfoMatch() *regexp.Regexp {
 	return m3u8TsInfoMatch
 }
+func UrlDirMatch() *regexp.Regexp {
+	return urlDirMatch
+}
 func TagLinkMatch() *regexp.Regexp {
 	return tagLinkMatch
 }
 func init() {
 	domainMatch, _ = regexp.Compile("(http[s]?://.*?)/")
+	urlDirMatch, _ = regexp.Compile(`(http[s]?://.*/)`)
 	urlLinkMatch, _ = regexp.Compile("\"url\":\"(.*?)\"")
 	m3u8UrlLinkMatch, _ = regexp.Compile("m3u8url = '(.*?)'")
 	m3u8ContentInfoMatch, _ = regexp.Compile(`(http[s]?://.*?/)?(.*?\.m3u8)(\?.*)*`)
@@ -154,8 +161,9 @@ func FindVideoSource(old string) (dir string, domain string, e error) {
 }
 
 type VideoDatabase struct {
-	dir string
-	db  *gorm.DB
+	dir  string
+	db   *gorm.DB
+	lock sync.Mutex
 }
 
 type M3U8Video struct {
@@ -166,6 +174,8 @@ type M3U8Video struct {
 	Title     string // The title of the video
 	Img       string // The image of the video
 	Desc      string // The description of the video
+	// status
+	Fetched bool // Whether the video has been fetched
 }
 type M3U8Content struct {
 	gorm.Model
@@ -181,41 +191,67 @@ func (vdb *VideoDatabase) Init(dir string) error {
 		PrepareStmt: true,
 	})
 	if err != nil {
-		fmt.Printf("打不开数据库: %s\n", err)
+		fmt.Printf("数据库错误: %s\n", err)
 		return err
 	}
 	vdb.db = db
 	db.AutoMigrate(&M3U8Video{})
 	db.AutoMigrate(&M3U8Content{})
+	vdb.lock = sync.Mutex{}
 	return nil
 }
 func (vdb *VideoDatabase) VideoAdd(video *M3U8Video) error {
+	vdb.lock.Lock()
+	defer vdb.lock.Unlock()
 	return vdb.db.Create(video).Error
 }
 func (vdb *VideoDatabase) VideoLen() (int64, error) {
+	vdb.lock.Lock()
+	defer vdb.lock.Unlock()
 	var count int64
 	err := vdb.db.Model(&M3U8Video{}).Count(&count).Error
 	return count, err
 }
 func (vdb *VideoDatabase) VideoGet(id int) (*M3U8Video, error) {
+	vdb.lock.Lock()
+	defer vdb.lock.Unlock()
 	var video M3U8Video
 	err := vdb.db.First(&video, id).Error
 	return &video, err
 }
+func (vdb *VideoDatabase) VideoSetFetched(id int, status bool) error {
+	vdb.lock.Lock()
+	defer vdb.lock.Unlock()
+	var video M3U8Video
+	err := vdb.db.First(&video, id).Error
+	if err != nil {
+		return err
+	}
+	video.Fetched = status
+	return vdb.db.Save(&video).Error
+}
 func (vdb *VideoDatabase) M3U8ContentAdd(content *M3U8Content) error {
+	vdb.lock.Lock()
+	defer vdb.lock.Unlock()
 	return vdb.db.Create(content).Error
 }
 func (vdb *VideoDatabase) M3U8ContentGet(videoID int, index int) (*M3U8Content, error) {
+	vdb.lock.Lock()
+	defer vdb.lock.Unlock()
 	var content M3U8Content
 	err := vdb.db.First(&content, "video_id = ? and index = ?", videoID, index).Error
 	return &content, err
 }
 func (vdb *VideoDatabase) M3U8ContentGetAll(videoID int) ([]*M3U8Content, error) {
+	vdb.lock.Lock()
+	defer vdb.lock.Unlock()
 	var contents []*M3U8Content
 	err := vdb.db.Where("video_id = ?", videoID).Find(&contents).Error
 	return contents, err
 }
 func (vdb *VideoDatabase) M3U8ContentLen(videoID int) (int64, error) {
+	vdb.lock.Lock()
+	defer vdb.lock.Unlock()
 	var count int64
 	err := vdb.db.Model(&M3U8Content{}).Where("video_id = ?", videoID).Count(&count).Error
 	return count, err
@@ -251,6 +287,7 @@ func (d *M3U8Decoder) init(list *[][]string) error {
 		return nil
 	}
 	domain := (*list)[ptr][1]
+	lastDir := UrlDirMatch().FindStringSubmatch(domain + (*list)[ptr][2])[1]
 	m3u8url := domain + (*list)[ptr][2] + (*list)[ptr][3]
 	fmt.Printf("正在获取 %s\n", m3u8url)
 	m3u8Content, err := UrlGetToStr(m3u8url)
@@ -274,8 +311,11 @@ func (d *M3U8Decoder) init(list *[][]string) error {
 		}
 	}
 	for _, i := range buffer {
-		if i[1] == "" {
+		if (i[1] == "") && (strings.HasPrefix(i[2], "/")) {
 			i[1] = domain
+			i[2] = strings.TrimPrefix(i[2], "/")
+		} else if i[1] == "" {
+			i[1] = lastDir
 		}
 	}
 	buffer = append((*list)[0:ptr], buffer...)
@@ -293,4 +333,27 @@ func (d *M3U8Decoder) Get(index int) ([]string, error) {
 		return nil, errors.New("index out of range")
 	}
 	return d.content[index], nil
+}
+
+type M3U8Downloader struct {
+	client *colly.Collector
+	wg     *sync.WaitGroup
+}
+
+func (d *M3U8Downloader) Download(video *[]M3U8Content, dir string) error {
+	d.client = CollyCollector()
+	d.client.OnRequest(func(r *colly.Request) {
+
+	})
+	d.client.OnResponse(func(r *colly.Response) {
+		d.wg.Done()
+	})
+	for index, v := range *video {
+		d.wg.Add(1)
+		ctx := &colly.Context{}
+		ctx.Put("video", index)
+		d.client.Request("GET", v.Content, nil, ctx, nil)
+	}
+	d.wg.Wait()
+	return nil
 }
