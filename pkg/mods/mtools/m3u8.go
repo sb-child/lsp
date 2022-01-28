@@ -1,14 +1,18 @@
 package mtools
 
 import (
+	"bytes"
 	"errors"
 	"fmt"
 	"io/ioutil"
 	"net/http"
+	"os"
 	"path"
 	"regexp"
+	"strconv"
 	"strings"
 	"sync"
+	"time"
 
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
@@ -25,6 +29,7 @@ var (
 	m3u8ContentInfoMatch,
 	m3u8TsInfoMatch,
 	urlDirMatch,
+	m3u8KeyUrlMatch,
 	tagLinkMatch *regexp.Regexp
 )
 
@@ -54,6 +59,9 @@ func M3U8ContentInfoMatch() *regexp.Regexp {
 func M3U8TsInfoMatch() *regexp.Regexp {
 	return m3u8TsInfoMatch
 }
+func M3U8KeyUrlMatch() *regexp.Regexp {
+	return m3u8KeyUrlMatch
+}
 func UrlDirMatch() *regexp.Regexp {
 	return urlDirMatch
 }
@@ -65,6 +73,7 @@ func init() {
 	urlDirMatch, _ = regexp.Compile(`(http[s]?://.*/)`)
 	urlLinkMatch, _ = regexp.Compile("\"url\":\"(.*?)\"")
 	m3u8UrlLinkMatch, _ = regexp.Compile("m3u8url = '(.*?)'")
+	m3u8KeyUrlMatch, _ = regexp.Compile(`URI="(.*?)"`)
 	m3u8ContentInfoMatch, _ = regexp.Compile(`(http[s]?://.*?/)?(.*?\.m3u8)(\?.*)*`)
 	m3u8TsInfoMatch, _ = regexp.Compile(`(http[s]?://.*?/)?(.*?\.ts)(\?.*)*`)
 	tagLinkMatch, _ = regexp.Compile(`/index\.php/vod/type/id/(.*?).html`)
@@ -296,6 +305,10 @@ func (d *M3U8Decoder) init(list *[][]string) error {
 	}
 	buffer := make([][]string, 0)
 	for _, line := range strings.Split(m3u8Content, "\n") {
+		if strings.HasPrefix(line, "#EXT-X-KEY:") {
+			// todo
+			continue
+		}
 		if strings.HasPrefix(line, "#") {
 			continue
 		}
@@ -338,22 +351,75 @@ func (d *M3U8Decoder) Get(index int) ([]string, error) {
 type M3U8Downloader struct {
 	client *colly.Collector
 	wg     *sync.WaitGroup
+	buffer [][]byte
 }
 
-func (d *M3U8Downloader) Download(video *[]M3U8Content, dir string) error {
-	d.client = CollyCollector()
-	d.client.OnRequest(func(r *colly.Request) {
-
+func (d *M3U8Downloader) Download(video []*M3U8Content, dir string, name string) error {
+	d.buffer = make([][]byte, len(video))
+	d.client = CollyCollectorSlow()
+	d.client.SetRequestTimeout(time.Second * 3)
+	d.wg = &sync.WaitGroup{}
+	count := len(video)
+	downloaded := 0
+	t := time.NewTicker(time.Second)
+	done := make(chan struct{})
+	lock := sync.Mutex{}
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case <-t.C:
+				lock.Lock()
+				fmt.Printf("正在下载[%d]/[%d]: %d%%\n",
+					downloaded, count, 100*downloaded/count,
+				)
+				lock.Unlock()
+			}
+		}
+	}()
+	d.client.OnRequest(func(r *colly.Request) {})
+	d.client.OnError(func(r *colly.Response, err error) {
+		fmt.Printf("下载 %s 时报错: %s, 正在重试...\n", r.Request.URL, err.Error())
+		r.Request.Retry()
 	})
 	d.client.OnResponse(func(r *colly.Response) {
+		if r.StatusCode != 200 {
+			fmt.Printf("下载 %s 时, 非预期的状态码: %d, 正在重试...\n", r.Request.URL, r.StatusCode)
+			r.Request.Retry()
+			return
+		}
+		index, _ := strconv.ParseInt(r.Ctx.Get("video"), 10, 64)
+		d.buffer[index] = r.Body
+		lock.Lock()
+		downloaded++
+		lock.Unlock()
 		d.wg.Done()
 	})
-	for index, v := range *video {
+	for index, v := range video {
 		d.wg.Add(1)
-		ctx := &colly.Context{}
-		ctx.Put("video", index)
+		ctx := colly.NewContext()
+		ctx.Put("video", strconv.FormatInt((int64)(index), 10))
 		d.client.Request("GET", v.Content, nil, ctx, nil)
 	}
 	d.wg.Wait()
+	t.Stop()
+	close(done)
+	fmt.Println("正在保存...")
+	fileBytes := bytes.Buffer{}
+	for _, v := range d.buffer {
+		fileBytes.Write(v)
+	}
+	// write to file
+	fileName := fmt.Sprintf("%s/%s.mp4", dir, name)
+	f, err := os.Create(fileName)
+	if err != nil {
+		return err
+	}
+	defer f.Close()
+	_, err = f.Write(fileBytes.Bytes())
+	if err != nil {
+		return err
+	}
 	return nil
 }

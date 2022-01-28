@@ -216,6 +216,13 @@ skip:
 		os.Exit(1)
 		return
 	}
+	// 下载，合并，保存视频
+	fmt.Println("开始下载...")
+	if err := download(dld_dir); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+		return
+	}
 }
 func fetchTs(dir string) error {
 	fmt.Println("读取数据库...")
@@ -279,7 +286,7 @@ func fetchTs(dir string) error {
 		lock.Unlock()
 		return nil
 	}
-	for i := 1; i < (int)(count); i++ {
+	for i := 1; i <= (int)(count); i++ {
 		v, err := db.VideoGet(i)
 		if v.Fetched {
 			continue
@@ -298,6 +305,22 @@ func fetchTs(dir string) error {
 			save(decoder, v, j, tsLen, i, (int)(count))
 		}
 		db.VideoSetFetched(i, true)
+	}
+	return nil
+}
+
+func download(dir string) error {
+	fmt.Println("读取数据库...")
+	db := mtools.VideoDatabase{}
+	downloader := mtools.M3U8Downloader{}
+	if err := db.Init(dir); err != nil {
+		return err
+	}
+	videoCount, _ := db.VideoLen()
+	for i := 1; i <= (int)(videoCount); i++ {
+		content, _ := db.M3U8ContentGetAll(i)
+		videoDesc, _ := db.VideoGet(i)
+		downloader.Download(content, dir, fmt.Sprintf("%d", videoDesc.ID))
 	}
 	return nil
 }
