@@ -194,8 +194,11 @@ type M3U8Content struct {
 	Downloaded bool
 }
 
-func (vdb *VideoDatabase) Init(dir string) error {
+func (vdb *VideoDatabase) Init(dir, dbFile string) error {
 	vdb.dir = path.Join(dir, "_lsp.db")
+	if len(dbFile) != 0 {
+		vdb.dir = dbFile
+	}
 	db, err := gorm.Open(sqlite.Open(vdb.dir), &gorm.Config{
 		PrepareStmt: true,
 	})

@@ -24,6 +24,7 @@ type task struct {
 	mod           *mods.ModuleIO
 	tags          []string
 	dir           string
+	dbFile        string
 	get_tags_only bool
 }
 
@@ -39,6 +40,7 @@ func main() {
 	fmt.Println("[sb-child/lsp]视频爬取工具 Go版本")
 	var (
 		downloadDir     string
+		dbFile          string
 		tagList         string
 		selectedMod     string
 		getModList      bool
@@ -48,11 +50,12 @@ func main() {
 	)
 	flag.StringVar(&selectedMod, "mod", "", "指定要加载的模块")
 	flag.StringVar(&downloadDir, "dir", getDownloadDir(), "可选: 指定下载目录")
+	flag.StringVar(&dbFile, "db", "", "可选: 指定下载目录")
 	flag.StringVar(&tagList, "tag", "", "可选: 指定分类(编号)并终止, 用英文逗号分隔, 否则为默认")
 	flag.BoolVar(&getModList, "mods", false, "可选: 获取当前可选模块并终止")
 	flag.BoolVar(&getTagList, "tags", false, "可选: 获取当前模块中, 全部可用的分类")
 	flag.BoolVar(&getVideoList, "list", false, "可选: 仅获取视频列表, 不保存视频信息")
-	flag.BoolVar(&writeToDatabase, "db", false, "可选: 仅将视频信息写入数据库")
+	flag.BoolVar(&writeToDatabase, "save", false, "可选: 仅将视频信息写入数据库")
 	flag.Parse()
 	if downloadDir == "" && !getVideoList {
 		fmt.Println("请指定一个下载目录")
@@ -99,6 +102,7 @@ func main() {
 		tags:          标签列表,
 		dir:           downloadDir,
 		get_tags_only: getTagList,
+		dbFile:        dbFile,
 	})
 }
 
@@ -182,7 +186,7 @@ func run(t task) {
 		// 保存解析结果
 		fmt.Println("正在保存到数据库...")
 		db := mtools.VideoDatabase{}
-		if err := db.Init(dld_dir); err != nil {
+		if err := db.Init(dld_dir, t.dbFile); err != nil {
 			os.Exit(1)
 			return
 		}
@@ -211,23 +215,23 @@ func run(t task) {
 	getVideoList()
 skip:
 	// 提取ts列表
-	if err := fetchTs(dld_dir); err != nil {
+	if err := fetchTs(dld_dir, t.dbFile); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 		return
 	}
 	// 下载，合并，保存视频
 	fmt.Println("开始下载...")
-	if err := download(dld_dir); err != nil {
+	if err := download(dld_dir, t.dbFile); err != nil {
 		fmt.Println(err)
 		os.Exit(1)
 		return
 	}
 }
-func fetchTs(dir string) error {
+func fetchTs(dir, dbFile string) error {
 	fmt.Println("读取数据库...")
 	db := mtools.VideoDatabase{}
-	if err := db.Init(dir); err != nil {
+	if err := db.Init(dir, dbFile); err != nil {
 		return err
 	}
 	fmt.Println("解析链接...")
@@ -309,11 +313,11 @@ func fetchTs(dir string) error {
 	return nil
 }
 
-func download(dir string) error {
+func download(dir, dbFile string) error {
 	fmt.Println("读取数据库...")
 	db := mtools.VideoDatabase{}
 	downloader := mtools.M3U8Downloader{}
-	if err := db.Init(dir); err != nil {
+	if err := db.Init(dir, dbFile); err != nil {
 		return err
 	}
 	videoCount, _ := db.VideoLen()
