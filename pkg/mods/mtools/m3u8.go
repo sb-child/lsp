@@ -2,6 +2,8 @@ package mtools
 
 import (
 	"bytes"
+	"crypto/aes"
+	"crypto/cipher"
 	"errors"
 	"fmt"
 	"io/ioutil"
@@ -191,6 +193,7 @@ type M3U8Content struct {
 	VideoID    int
 	Index      int
 	Content    string
+	Key        string
 	Downloaded bool
 }
 
@@ -307,22 +310,39 @@ func (d *M3U8Decoder) init(list *[][]string) error {
 		return fmt.Errorf("获取失败: %s", err.Error())
 	}
 	buffer := make([][]string, 0)
+	lastKey := ""
 	for _, line := range strings.Split(m3u8Content, "\n") {
 		if strings.HasPrefix(line, "#EXT-X-KEY:") {
-			// todo
-			continue
+			// get the URI of this line
+			url := M3U8KeyUrlMatch().FindStringSubmatch(line)[1]
+			if url == "" {
+				continue
+			}
+			// check if the url is absolute
+			if !UrlDirMatch().MatchString(url) {
+				if strings.HasPrefix(url, "/") {
+					url = domain + url
+				} else {
+					url = lastDir + url
+				}
+			}
+			// get key
+			r, err := UrlGetToStr(url)
+			if err != nil {
+				return err
+			}
+			lastKey = r
 		}
 		if strings.HasPrefix(line, "#") {
 			continue
 		}
-		ln := M3U8ContentInfoMatch().FindStringSubmatch(line)
-		if ln != nil {
+		if ln := M3U8ContentInfoMatch().FindStringSubmatch(line); ln != nil {
 			ln[0] = "m"
 			buffer = append(buffer, ln)
 		}
-		ln = M3U8TsInfoMatch().FindStringSubmatch(line)
-		if ln != nil {
+		if ln := M3U8TsInfoMatch().FindStringSubmatch(line); ln != nil {
 			ln[0] = "t"
+			ln = append(ln, lastKey)
 			buffer = append(buffer, ln)
 		}
 	}
@@ -349,6 +369,18 @@ func (d *M3U8Decoder) Get(index int) ([]string, error) {
 		return nil, errors.New("index out of range")
 	}
 	return d.content[index], nil
+}
+
+func aesDecrypt(crypted, key []byte) ([]byte, error) {
+	block, err := aes.NewCipher(key)
+	if err != nil {
+		return nil, err
+	}
+	blockSize := block.BlockSize()
+	blockMode := cipher.NewCBCDecrypter(block, key[:blockSize])
+	origData := make([]byte, len(crypted))
+	blockMode.CryptBlocks(origData, crypted)
+	return origData, nil
 }
 
 type M3U8Downloader struct {
@@ -392,6 +424,12 @@ func (d *M3U8Downloader) Download(video []*M3U8Content, dir string, name string)
 			r.Request.Retry()
 			return
 		}
+		if key := r.Ctx.Get("key"); key != "" {
+			dec, err := aesDecrypt(r.Body, []byte(key))
+			if err == nil {
+				r.Body = dec
+			}
+		}
 		index, _ := strconv.ParseInt(r.Ctx.Get("video"), 10, 64)
 		d.buffer[index] = r.Body
 		lock.Lock()
@@ -403,6 +441,7 @@ func (d *M3U8Downloader) Download(video []*M3U8Content, dir string, name string)
 		d.wg.Add(1)
 		ctx := colly.NewContext()
 		ctx.Put("video", strconv.FormatInt((int64)(index), 10))
+		ctx.Put("key", v.Key)
 		d.client.Request("GET", v.Content, nil, ctx, nil)
 	}
 	d.wg.Wait()

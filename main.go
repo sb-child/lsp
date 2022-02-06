@@ -276,11 +276,16 @@ func fetchTs(dir, dbFile string) error {
 			return err
 		}
 		link := ts[1] + ts[2] + ts[3]
+		key := ""
+		if len(ts) == 5 {
+			key = ts[4]
+		}
 		db.M3U8ContentAdd(&mtools.M3U8Content{
 			VideoID:    int(video.ID),
 			Index:      tsIndex,
 			Content:    link,
 			Downloaded: false,
+			Key:        key,
 		})
 		lock.Lock()
 		status.TsCount = tsCount
