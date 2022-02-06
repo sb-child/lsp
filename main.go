@@ -329,7 +329,12 @@ func download(dir, dbFile string) error {
 	for i := 1; i <= (int)(videoCount); i++ {
 		content, _ := db.M3U8ContentGetAll(i)
 		videoDesc, _ := db.VideoGet(i)
+		if videoDesc.Downloaded {
+			fmt.Printf("跳过已下载的视频[%d]...\n", i)
+			continue
+		}
 		downloader.Download(content, dir, fmt.Sprintf("%d", videoDesc.ID))
+		db.VideoSetDownloaded(i, true)
 	}
 	return nil
 }
