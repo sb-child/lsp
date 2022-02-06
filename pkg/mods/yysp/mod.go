@@ -197,6 +197,9 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 	r := make([]mods.VideoContainer, 0)
 	rc := make(chan mods.VideoContainer, 20+10*len(t))
 	goLock := sync.WaitGroup{}
+	firstVideoLock := sync.WaitGroup{}
+	firstVideoLockOnce := sync.Once{}
+	firstVideoLock.Add(1)
 	processTitle := func(ot string) (r string) {
 		ot = strings.TrimSpace(ot)
 		ot = strings.ReplaceAll(ot, "\n", " ")
@@ -222,6 +225,9 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 	}
 	爬虫.OnHTML(`li>a[target="_blank"]`, func(e *colly.HTMLElement) {
 		goLock.Add(1)
+		firstVideoLockOnce.Do(func() {
+			firstVideoLock.Done()
+		})
 		link := m.主站 + strings.TrimSpace(processLink(e.Attr("href")))
 		title := processTitle(e.Attr("title"))
 		img := strings.TrimSpace(e.ChildAttr("img", "src"))
@@ -260,6 +266,7 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 	}
 	爬虫.Wait()
 	m.i_信息("全部获取完成, 等待汇总任务...")
+	firstVideoLock.Wait()
 	goLock.Wait()
 	m.i_信息("获取视频M3U8...")
 	links := make([]string, len(r))

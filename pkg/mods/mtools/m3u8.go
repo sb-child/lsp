@@ -91,16 +91,27 @@ func init() {
 // end of regex
 
 func UrlGetToStr(url string) (string, error) {
-	hc := http.Client{}
-	r, err := hc.Get(url)
-	if err != nil {
-		return "", err
+	var err error
+	for i := 0; i < 3; i++ {
+		hc := http.Client{
+			Timeout: time.Second * 5,
+		}
+		r, err := hc.Get(url)
+		if err != nil {
+			fmt.Printf("http错误: %s\n", err.Error())
+			time.Sleep(time.Second * 5)
+			continue
+		}
+		b, err := ioutil.ReadAll(r.Body)
+		if err != nil {
+			fmt.Printf("读取失败: %s\n", err.Error())
+			time.Sleep(time.Second * 5)
+			continue
+		}
+		return string(b), nil
 	}
-	b, err := ioutil.ReadAll(r.Body)
-	if err != nil {
-		return "", err
-	}
-	return string(b), nil
+	fmt.Println("多次失败，放弃")
+	return "", err
 }
 func UrlGetToStrMust(url string) string {
 	r, err := UrlGetToStr(url)
@@ -186,7 +197,8 @@ type M3U8Video struct {
 	Img       string // The image of the video
 	Desc      string // The description of the video
 	// status
-	Fetched bool // Whether the video has been fetched
+	Fetched    bool // Whether the video has been fetched
+	Downloaded bool // Whether the video has been downloaded
 }
 type M3U8Content struct {
 	gorm.Model
@@ -243,6 +255,17 @@ func (vdb *VideoDatabase) VideoSetFetched(id int, status bool) error {
 		return err
 	}
 	video.Fetched = status
+	return vdb.db.Save(&video).Error
+}
+func (vdb *VideoDatabase) VideoSetDownloaded(id int, status bool) error {
+	vdb.lock.Lock()
+	defer vdb.lock.Unlock()
+	var video M3U8Video
+	err := vdb.db.First(&video, id).Error
+	if err != nil {
+		return err
+	}
+	video.Downloaded = status
 	return vdb.db.Save(&video).Error
 }
 func (vdb *VideoDatabase) M3U8ContentAdd(content *M3U8Content) error {
@@ -392,7 +415,7 @@ type M3U8Downloader struct {
 func (d *M3U8Downloader) Download(video []*M3U8Content, dir string, name string) error {
 	d.buffer = make([][]byte, len(video))
 	d.client = CollyCollectorSlow()
-	d.client.SetRequestTimeout(time.Second * 3)
+	d.client.SetRequestTimeout(time.Second * 20)
 	d.wg = &sync.WaitGroup{}
 	count := len(video)
 	downloaded := 0
