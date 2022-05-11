@@ -57,12 +57,11 @@ func (m *Mod) Init() bool {
 	网址列表 := make([]string, 0)
 	for a := 1; a < 3; a++ {
 		网址列表 = append(网址列表, fmt.Sprintf("https://yyspzy%d.xyz", a))
-	}
-	for a := 1; a < 3; a++ {
 		网址列表 = append(网址列表, fmt.Sprintf("https://yylu%d.com", a))
 	}
 	for a := 1; a < 7; a++ {
 		网址列表 = append(网址列表, fmt.Sprintf("https://yyzy%d.com", a))
+		网址列表 = append(网址列表, fmt.Sprintf("https://www.yyzy%d.com", a))
 	}
 	rand.Shuffle(len(网址列表), func(i, j int) {
 		网址列表[i], 网址列表[j] = 网址列表[j], 网址列表[i]
@@ -146,7 +145,11 @@ func (m *Mod) getVideoM3U8(links []string) (r map[string]string) {
 		}
 		m3u8Url := finds[1]
 		m3u8Url = strings.ReplaceAll(m3u8Url, "\\", "")
-		m3u8Url, domain := tools.FindVideoSource(m3u8Url)
+		m3u8Url, domain, err := tools.FindVideoSource(m3u8Url)
+		if err != nil {
+			m.w_警告(fmt.Sprintf("内容获取失败: [%s] %s", e.Request.URL.String(), err.Error()))
+			return
+		}
 		if !strings.HasPrefix(m3u8Url, "https://") {
 			m3u8Url = domain + "/" + m3u8Url
 		}
@@ -194,6 +197,9 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 	r := make([]mods.VideoContainer, 0)
 	rc := make(chan mods.VideoContainer, 20+10*len(t))
 	goLock := sync.WaitGroup{}
+	firstVideoLock := sync.WaitGroup{}
+	firstVideoLockOnce := sync.Once{}
+	firstVideoLock.Add(1)
 	processTitle := func(ot string) (r string) {
 		ot = strings.TrimSpace(ot)
 		ot = strings.ReplaceAll(ot, "\n", " ")
@@ -219,6 +225,9 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 	}
 	爬虫.OnHTML(`li>a[target="_blank"]`, func(e *colly.HTMLElement) {
 		goLock.Add(1)
+		firstVideoLockOnce.Do(func() {
+			firstVideoLock.Done()
+		})
 		link := m.主站 + strings.TrimSpace(processLink(e.Attr("href")))
 		title := processTitle(e.Attr("title"))
 		img := strings.TrimSpace(e.ChildAttr("img", "src"))
@@ -257,6 +266,7 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 	}
 	爬虫.Wait()
 	m.i_信息("全部获取完成, 等待汇总任务...")
+	firstVideoLock.Wait()
 	goLock.Wait()
 	m.i_信息("获取视频M3U8...")
 	links := make([]string, len(r))

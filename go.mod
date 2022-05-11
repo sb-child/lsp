@@ -6,7 +6,6 @@ require (
 	github.com/antchfx/xpath v1.2.0 // indirect
 	github.com/gojek/valkyrie v0.0.0-20190210220504-8f62c1e7ba45 // indirect
 	github.com/golang/groupcache v0.0.0-20210331224755-41bb18bfe9da // indirect
-	github.com/golang/protobuf v1.5.2 // indirect
 	github.com/gookit/color v1.5.0
 	github.com/stretchr/testify v1.7.1 // indirect
 	golang.org/x/crypto v0.0.0-20220507011949-2cf3adece122 // indirect
@@ -32,6 +31,8 @@ require (
 	github.com/antchfx/xmlquery v1.3.10 // indirect
 	github.com/davecgh/go-spew v1.1.1 // indirect
 	github.com/gobwas/glob v0.2.3 // indirect
+	github.com/golang/protobuf v1.5.2 // indirect
+	github.com/grafov/m3u8 v0.11.1 // indirect
 	github.com/jinzhu/inflection v1.0.0 // indirect
 	github.com/jinzhu/now v1.1.5 // indirect
 	github.com/kennygrant/sanitize v1.2.4 // indirect

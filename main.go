@@ -10,6 +10,8 @@ import (
 	"math/rand"
 	"os"
 	"strings"
+	"sync"
+	"time"
 
 	"github.com/gookit/color"
 )
@@ -22,6 +24,7 @@ type task struct {
 	mod           *mods.ModuleIO
 	tags          []string
 	dir           string
+	dbFile        string
 	get_tags_only bool
 }
 
@@ -36,47 +39,56 @@ func getDownloadDir() string {
 func main() {
 	fmt.Println("[sb-child/lsp]视频爬取工具 Go版本")
 	var (
-		下载目录    string
-		标签字符串   string
-		选中的模块   string
-		仅获取可选模块 bool
-		仅获取视频列表 bool
-		仅获取全部标签 bool
+		downloadDir     string
+		dbFile          string
+		tagList         string
+		selectedMod     string
+		getModList      bool
+		getVideoList    bool
+		getTagList      bool
+		writeToDatabase bool
 	)
-	flag.StringVar(&选中的模块, "mod", "", "指定要加载的模块")
-	flag.BoolVar(&仅获取可选模块, "mods", false, "可选: 获取当前可选模块并终止")
-	flag.StringVar(&下载目录, "dir", getDownloadDir(), "可选: 指定下载目录")
-	flag.StringVar(&标签字符串, "tag", "", "可选: 指定分类(编号)并终止, 用英文逗号分隔, 可指定多个, 否则为默认")
-	flag.BoolVar(&仅获取全部标签, "tags", false, "可选: 获取当前模块中, 全部可用的分类并终止")
-	flag.BoolVar(&仅获取视频列表, "list", false, "可选: 仅拉取视频列表, 不下载")
+	flag.StringVar(&selectedMod, "mod", "", "指定要加载的模块")
+	flag.StringVar(&downloadDir, "dir", getDownloadDir(), "可选: 指定下载目录")
+	flag.StringVar(&dbFile, "db", "", "可选: 指定下载目录")
+	flag.StringVar(&tagList, "tag", "", "可选: 指定分类(编号)并终止, 用英文逗号分隔, 否则为默认")
+	flag.BoolVar(&getModList, "mods", false, "可选: 获取当前可选模块并终止")
+	flag.BoolVar(&getTagList, "tags", false, "可选: 获取当前模块中, 全部可用的分类")
+	flag.BoolVar(&getVideoList, "list", false, "可选: 仅获取视频列表, 不保存视频信息")
+	flag.BoolVar(&writeToDatabase, "save", false, "可选: 仅将视频信息写入数据库")
 	flag.Parse()
-	if 下载目录 == "" && !仅获取视频列表 {
+	if downloadDir == "" && !getVideoList {
 		fmt.Println("请指定一个下载目录")
 		os.Exit(4)
 		return
 	}
-	if 仅获取可选模块 {
+	if getVideoList && writeToDatabase {
+		fmt.Println("请去掉 -list 参数以写入数据库")
+		os.Exit(5)
+		return
+	}
+	if getModList {
 		fmt.Println("可用模块:")
 		for k, v := range mods.GetAllModules() {
 			fmt.Printf("模块名[%s] 模块描述[%s]\n", k, (*v).ModDesc())
 		}
 		return
 	}
-	if 选中的模块 == "" {
+	if selectedMod == "" {
 		fmt.Println("请指定一个模块")
 		os.Exit(3)
 		return
 	}
-	if 仅获取视频列表 {
-		下载目录 = ""
+	if getVideoList {
+		downloadDir = ""
 	}
-	模块实例 := mods.GetModule(选中的模块)
+	模块实例 := mods.GetModule(selectedMod)
 	if 模块实例 == nil {
-		fmt.Printf("找不到[%s]模块\n", 选中的模块)
+		fmt.Printf("找不到[%s]模块\n", selectedMod)
 		os.Exit(2)
 		return
 	}
-	_tags := strings.Split(标签字符串, ",")
+	_tags := strings.Split(tagList, ",")
 	标签列表 := make([]string, 0)
 	for _, v := range _tags {
 		if v == "" {
@@ -84,12 +96,13 @@ func main() {
 		}
 		标签列表 = append(标签列表, v)
 	}
-	fmt.Printf("载入[%s]模块...\n", 选中的模块)
+	fmt.Printf("载入[%s]模块...\n", selectedMod)
 	run(task{
 		mod:           模块实例,
 		tags:          标签列表,
-		dir:           下载目录,
-		get_tags_only: 仅获取全部标签,
+		dir:           downloadDir,
+		get_tags_only: getTagList,
+		dbFile:        dbFile,
 	})
 }
 
@@ -160,37 +173,168 @@ func run(t task) {
 		tags_temp[v] = struct{}{}
 	}
 	// === 初始化完成 ===
+	getVideoList := func() {
+		fmt.Println("获取视频列表...")
+		r := (*mod).GetVideos(t.tags)
+		if len(dld_dir) == 0 {
+			printVideoList(r)
+			return
+		}
+		// 输出下载路径, 视频个数. 创建目录
+		fmt.Printf("准备下载[%s]<-[%d]\n", dld_dir, len(r))
+		os.Mkdir(dld_dir, os.ModePerm)
+		// 保存解析结果
+		fmt.Println("正在保存到数据库...")
+		db := mtools.VideoDatabase{}
+		if err := db.Init(dld_dir, t.dbFile); err != nil {
+			os.Exit(1)
+			return
+		}
+		for _, v := range r {
+			mv := mtools.M3U8Video{
+				Title:     v.Title,
+				Link:      v.Link,
+				Img:       v.Img,
+				Desc:      v.Desc,
+				VideoLink: v.VideoLink,
+				Fetched:   false,
+			}
+			err := db.VideoAdd(&mv)
+			if err != nil {
+				fmt.Printf("保存时发生错误: %s\n", err.Error())
+				os.Exit(1)
+				return
+			}
+		}
+	}
+	// check if dld_dir exists
+	if fi, err := os.Stat(dld_dir); (err == nil) && (fi.IsDir()) {
+		goto skip
+	}
 	// 获取视频列表
-	fmt.Println("获取视频列表...")
-	r := (*mod).GetVideos(t.tags)
-	if len(dld_dir) == 0 {
-		printVideoList(r)
+	getVideoList()
+skip:
+	// 提取ts列表
+	if err := fetchTs(dld_dir, t.dbFile); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
 		return
 	}
-	// 输出下载路径, 视频个数. 创建目录
-	fmt.Printf("准备下载[%s]<-[%d]\n", dld_dir, len(r))
-	os.Mkdir(dld_dir, os.ModePerm)
-	// 保存解析结果
-	fmt.Println("正在保存到数据库...")
-	for _, v := range r {
-		db := mtools.VideoDatabase{}
-		db.Init(dld_dir)
-		mv := mtools.M3U8Video{
-			Title:     v.Title,
-			Link:      v.Link,
-			Img:       v.Img,
-			Desc:      v.Desc,
-			VideoLink: v.VideoLink,
-		}
-		err := db.Add(&mv)
-		if err != nil {
-			fmt.Printf("保存时发生错误: %s", err.Error())
-		}
+	// 下载，合并，保存视频
+	fmt.Println("开始下载...")
+	if err := download(dld_dir, t.dbFile); err != nil {
+		fmt.Println(err)
+		os.Exit(1)
+		return
 	}
-	// 提取ts列表
-	fmt.Printf("解析链接...")
+}
+func fetchTs(dir, dbFile string) error {
+	fmt.Println("读取数据库...")
 	db := mtools.VideoDatabase{}
-	db.Init(dld_dir)
-	decoder := mtools.M3U8Decoder{}
-	_ = decoder // todo
+	if err := db.Init(dir, dbFile); err != nil {
+		return err
+	}
+	fmt.Println("解析链接...")
+	count, _ := db.VideoLen()
+	t := time.NewTicker(time.Second)
+	done := make(chan struct{})
+	defer t.Stop()
+	defer close(done)
+	lock := sync.Mutex{}
+	status := struct {
+		VideoCount int
+		VideoDone  int
+		TsCount    int
+		TsDone     int
+	}{
+		VideoCount: (int)(count),
+		VideoDone:  0,
+		TsCount:    1,
+		TsDone:     1,
+	}
+	go func() {
+		for {
+			select {
+			case <-done:
+				return
+			case <-t.C:
+				lock.Lock()
+				fmt.Printf("视频[%d](%d%%): 正在存储[%d]/[%d]: %d%%\n",
+					status.VideoDone,
+					(status.VideoDone*100)/status.VideoCount,
+					status.TsDone,
+					status.TsCount,
+					(status.TsDone*100)/status.TsCount,
+				)
+				lock.Unlock()
+			}
+		}
+	}()
+	save := func(decoder mtools.M3U8Decoder, video *mtools.M3U8Video, tsIndex int, tsCount int, videoIndex int, videoCount int) error {
+		ts, err := decoder.Get(tsIndex)
+		if err != nil {
+			return err
+		}
+		link := ts[1] + ts[2] + ts[3]
+		key := ""
+		if len(ts) == 5 {
+			key = ts[4]
+		}
+		db.M3U8ContentAdd(&mtools.M3U8Content{
+			VideoID:    int(video.ID),
+			Index:      tsIndex,
+			Content:    link,
+			Downloaded: false,
+			Key:        key,
+		})
+		lock.Lock()
+		status.TsCount = tsCount
+		status.TsDone = tsIndex + 1
+		status.VideoCount = videoCount
+		status.VideoDone = videoIndex
+		lock.Unlock()
+		return nil
+	}
+	for i := 1; i <= (int)(count); i++ {
+		v, err := db.VideoGet(i)
+		if v.Fetched {
+			continue
+		}
+		if err != nil {
+			return err
+		}
+		decoder := mtools.M3U8Decoder{}
+		err = decoder.Init(v.VideoLink)
+		if err != nil {
+			return err
+		}
+		tsLen := decoder.Len()
+
+		for j := 0; j < tsLen; j++ {
+			save(decoder, v, j, tsLen, i, (int)(count))
+		}
+		db.VideoSetFetched(i, true)
+	}
+	return nil
+}
+
+func download(dir, dbFile string) error {
+	fmt.Println("读取数据库...")
+	db := mtools.VideoDatabase{}
+	downloader := mtools.M3U8Downloader{}
+	if err := db.Init(dir, dbFile); err != nil {
+		return err
+	}
+	videoCount, _ := db.VideoLen()
+	for i := 1; i <= (int)(videoCount); i++ {
+		content, _ := db.M3U8ContentGetAll(i)
+		videoDesc, _ := db.VideoGet(i)
+		if videoDesc.Downloaded {
+			fmt.Printf("跳过已下载的视频[%d]...\n", i)
+			continue
+		}
+		downloader.Download(content, dir, fmt.Sprintf("%d", videoDesc.ID))
+		db.VideoSetDownloaded(i, true)
+	}
+	return nil
 }
