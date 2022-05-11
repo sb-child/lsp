@@ -9,6 +9,7 @@ import (
 	"io/ioutil"
 	"net/http"
 	"os"
+	"os/exec"
 	"path"
 	"regexp"
 	"strconv"
@@ -481,10 +482,22 @@ func (d *M3U8Downloader) Download(video []*M3U8Content, dir string, name string)
 	if err != nil {
 		return err
 	}
-	defer f.Close()
 	_, err = f.Write(fileBytes.Bytes())
 	if err != nil {
 		return err
 	}
+	f.Close()
+	fmt.Println("正在使用ffmpeg编码视频...")
+	e := exec.Command("ffmpeg", "-i", fileName, "-c", "copy", "-y", fileName+".o.mp4")
+	// if stdout, err := e.StdoutPipe(); err != nil {
+	// 	fmt.Println("编码出错:", err)
+	// }
+	if err := e.Start(); err != nil {
+		fmt.Println("ffmpeg执行失败:", err)
+	}
+	if err := e.Wait(); err != nil {
+		fmt.Println("ffmpeg报错:", err)
+	}
+	fmt.Println("视频已保存为", fileName+".o.mp4")
 	return nil
 }
