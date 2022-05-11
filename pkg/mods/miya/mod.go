@@ -55,6 +55,6 @@ func (m *Mod) GetVideoLink() {
 
 }
 func init() {
-	var m mods.ModuleIO = &Mod{}
-	mods.AddModule(MOD_NAME, &m)
+	// var m mods.ModuleIO = &Mod{}
+	// mods.AddModule(MOD_NAME, &m)
 }
