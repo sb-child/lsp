@@ -297,6 +297,7 @@ func fetchTs(dir, dbFile string) error {
 			Units:      progress.UnitsDefault,
 			DeferStart: false,
 		}
+		pw.AppendTracker(&tracker)
 		if v.Fetched {
 			tracker.UpdateMessage(tracker.Message + " - 跳过")
 			tracker.MarkAsDone()
@@ -322,7 +323,6 @@ func fetchTs(dir, dbFile string) error {
 			continue
 		}
 		tracker.UpdateTotal(int64(tsLen))
-		pw.AppendTracker(&tracker)
 		for j := 0; j < tsLen; j++ {
 			save(decoder, v, j, tsLen, i, (int)(count))
 			tracker.Increment(1)
