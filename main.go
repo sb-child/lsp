@@ -353,7 +353,10 @@ func download(dir, dbFile string) error {
 		if len([]rune(videoTitleShort)) > 10 {
 			videoTitleShort = substr(videoTitleShort, 0, 10) + "..."
 		}
-		downloader.Download(content, dir, fmt.Sprintf("%d", videoDesc.ID), fmt.Sprintf("下载片段[%d/%d]%s", i, videoCount, videoTitleShort))
+		err := downloader.Download(content, dir, fmt.Sprintf("%d", videoDesc.ID), fmt.Sprintf("下载片段[%d/%d]%s", i, videoCount, videoTitleShort))
+		if err != nil {
+			fmt.Printf("下载视频[%d]时出错: %s\n", i, err.Error())
+		}
 		db.VideoSetDownloaded(i, true)
 	}
 	return nil

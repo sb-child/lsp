@@ -427,8 +427,11 @@ func (d *M3U8Downloader) Download(video []*M3U8Content, dir string, name string,
 	d.buffer = make([][]byte, len(video))
 	d.client = CollyCollectorSlow()
 	d.client.SetRequestTimeout(time.Second * 20)
-	d.wg = &sync.WaitGroup{}
 	count := len(video)
+	if count <= 0 {
+		return fmt.Errorf("片段为空")
+	}
+	d.wg = &sync.WaitGroup{}
 	d.wg.Add(count)
 	t := time.NewTicker(time.Second)
 	done := make(chan struct{})
