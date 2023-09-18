@@ -1,10 +1,7 @@
 {
-    "go.inferGopath": false,
-    "gopls": {
-        "experimentalWorkspaceModule": true
-    },
-    "go.toolsEnvVars": {
-        "GO111MODULE": "auto",
-        "GOPROXY": "https://goproxy.cn,direct"
-    }
+  "go.inferGopath": false,
+  "gopls": {},
+  "go.toolsEnvVars": {
+    "GOPROXY": "https://goproxy.cn,direct"
+  }
 }

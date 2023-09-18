@@ -3,12 +3,13 @@ package main
 import (
 	"flag"
 	"fmt"
-	_ "lsp/pkg/mods/miya"
-	mods "lsp/pkg/mods/modio"
-	"lsp/pkg/mods/mtools"
-	_ "lsp/pkg/mods/yysp"
+	_ "lsp/services/miya"
+	mods "lsp/services/modio"
+	"lsp/services/mtools"
+	_ "lsp/services/yysp"
 	"math/rand"
 	"os"
+	"path"
 	"strings"
 	"sync"
 	"time"
@@ -126,7 +127,6 @@ func printVideoList(video []mods.VideoContainer) {
 }
 
 func run(t task) {
-	// 初始化
 	mod := t.mod
 	dld_dir := t.dir
 	mc := mtools.NewMyColor((*mod).ModName())
@@ -134,46 +134,58 @@ func run(t task) {
 	(*mod).OnInfo(mc.Info)
 	(*mod).OnWarn(mc.Warn)
 	(*mod).OnError(mc.Err)
-	succ := (*mod).Init()
-	if !succ {
+	// check if dld_dir exists
+	if fi, err := os.Stat(dld_dir); (err == nil) && (fi.IsDir()) {
+		if fi, err := os.Stat(t.dbFile); (err == nil) && (!fi.IsDir()) {
+			goto skip
+		} else if fi, err := os.Stat(path.Join(dld_dir, "_lsp.db")); (err == nil) && (!fi.IsDir()) {
+			goto skip
+		}
+		fmt.Println("找不到数据库文件, 从网站拉取列表...")
+	}
+	// 初始化
+	if succ := (*mod).Init(); !succ {
 		fmt.Println("初始化失败")
 		os.Exit(1)
 		return
 	}
 	// 获取分类, 检查分类是否正确
-	fmt.Println("获取分类...")
-	tags := (*mod).GetAllTags()
-	fmt.Printf("共[%d]个\n", len(tags))
-	if t.get_tags_only {
-		for k, v := range tags {
-			fmt.Print("分类[")
-			color.Cyan.Print(v)
-			fmt.Print("] 编号[")
-			color.Cyan.Print(k)
-			fmt.Print("]\n")
-		}
-		return
-	}
-	_checkTag := func(s string) bool {
-		_, ok := tags[s]
-		return ok
-	}
-	tags_temp := make(map[string]struct{})
-	for _, v := range t.tags {
-		if !_checkTag(v) {
-			fmt.Printf("[%s]不属于任何一个分类\n", v)
-			os.Exit(10)
+	func() {
+		fmt.Println("获取分类...")
+		tags := (*mod).GetAllTags()
+		fmt.Printf("共[%d]个\n", len(tags))
+		if t.get_tags_only {
+			for k, v := range tags {
+				fmt.Print("分类[")
+				color.Cyan.Print(v)
+				fmt.Print("] 编号[")
+				color.Cyan.Print(k)
+				fmt.Print("]\n")
+			}
 			return
 		}
-		if _, ok := tags_temp[v]; ok {
-			fmt.Printf("重复分类[%s]\n", v)
-			os.Exit(10)
-			return
+		_checkTag := func(s string) bool {
+			_, ok := tags[s]
+			return ok
 		}
-		tags_temp[v] = struct{}{}
-	}
+		tags_temp := make(map[string]struct{})
+		for _, v := range t.tags {
+			if !_checkTag(v) {
+				fmt.Printf("[%s]不属于任何一个分类\n", v)
+				os.Exit(10)
+				return
+			}
+			if _, ok := tags_temp[v]; ok {
+				fmt.Printf("重复分类[%s]\n", v)
+				os.Exit(10)
+				return
+			}
+			tags_temp[v] = struct{}{}
+		}
+	}()
 	// === 初始化完成 ===
-	getVideoList := func() {
+	// 获取视频列表
+	func() {
 		fmt.Println("获取视频列表...")
 		r := (*mod).GetVideos(t.tags)
 		if len(dld_dir) == 0 {
@@ -206,13 +218,7 @@ func run(t task) {
 				return
 			}
 		}
-	}
-	// check if dld_dir exists
-	if fi, err := os.Stat(dld_dir); (err == nil) && (fi.IsDir()) {
-		goto skip
-	}
-	// 获取视频列表
-	getVideoList()
+	}()
 skip:
 	// 提取ts列表
 	if err := fetchTs(dld_dir, t.dbFile); err != nil {
@@ -333,8 +339,23 @@ func download(dir, dbFile string) error {
 			fmt.Printf("跳过已下载的视频[%d]...\n", i)
 			continue
 		}
-		downloader.Download(content, dir, fmt.Sprintf("%d", videoDesc.ID))
+		videoTitleShort := videoDesc.Title
+		if len([]rune(videoTitleShort)) > 10 {
+			videoTitleShort = substr(videoTitleShort, 0, 10) + "..."
+		}
+		downloader.Download(content, dir, fmt.Sprintf("%d", videoDesc.ID), fmt.Sprintf("[%d/%d]%s", i, videoCount, videoTitleShort))
 		db.VideoSetDownloaded(i, true)
 	}
 	return nil
+}
+
+func substr(input string, start int, length int) string {
+	asRunes := []rune(input)
+	if start >= len(asRunes) {
+		return ""
+	}
+	if start+length > len(asRunes) {
+		length = len(asRunes) - start
+	}
+	return string(asRunes[start : start+length])
 }

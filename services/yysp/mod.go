@@ -2,8 +2,8 @@ package miya
 
 import (
 	"fmt"
-	mods "lsp/pkg/mods/modio"
-	tools "lsp/pkg/mods/mtools"
+	mods "lsp/services/modio"
+	tools "lsp/services/mtools"
 	"math/rand"
 	"strings"
 	"sync"
@@ -55,13 +55,14 @@ func (m *Mod) OnError(f func(s string)) {
 // Init 初始化
 func (m *Mod) Init() bool {
 	网址列表 := make([]string, 0)
-	for a := 1; a < 3; a++ {
+	for a := 1; a < 5; a++ {
 		网址列表 = append(网址列表, fmt.Sprintf("https://yyspzy%d.xyz", a))
+		网址列表 = append(网址列表, fmt.Sprintf("https://www.yyspzy%d.xyz", a))
 		网址列表 = append(网址列表, fmt.Sprintf("https://yylu%d.com", a))
 	}
-	for a := 1; a < 7; a++ {
+	for a := 31; a < 41; a++ {
 		网址列表 = append(网址列表, fmt.Sprintf("https://yyzy%d.com", a))
-		网址列表 = append(网址列表, fmt.Sprintf("https://www.yyzy%d.com", a))
+		网址列表 = append(网址列表, fmt.Sprintf("https://www.yysp%d.com", a))
 	}
 	rand.Shuffle(len(网址列表), func(i, j int) {
 		网址列表[i], 网址列表[j] = 网址列表[j], 网址列表[i]
@@ -93,7 +94,7 @@ func (m *Mod) t_网站测试(链接 string) string {
 		m.w_警告(fmt.Sprintf("@[%s]", 主页))
 		爬虫.Visit(主页)
 	})
-	爬虫.OnHTML("meta[name=\"renderer\"]", func(e *colly.HTMLElement) {
+	爬虫.OnHTML("#searchform", func(e *colly.HTMLElement) {
 		// 主页
 		结果 = e.Request.URL.String()
 	})
@@ -175,7 +176,7 @@ func (m *Mod) getVideoM3U8(links []string) (r map[string]string) {
 func (m *Mod) GetAllTags() map[string]string {
 	爬虫 := m.makeSpider(true)
 	list := make(map[string]string)
-	爬虫.OnHTML(`a[class="1\=0"]`, func(e *colly.HTMLElement) {
+	爬虫.OnHTML(`.menu>dl>dd>a`, func(e *colly.HTMLElement) {
 		href := strings.TrimSpace(e.Attr("href"))
 		// m.i_信息(href)
 		f := tools.TagLinkMatch().FindStringSubmatch(href)
@@ -223,29 +224,21 @@ func (m *Mod) GetVideos(t []string) []mods.VideoContainer {
 		ln = strings.ReplaceAll(ln, ".html", "/sid/1/nid/1.html")
 		return ln
 	}
-	爬虫.OnHTML(`li>a[target="_blank"]`, func(e *colly.HTMLElement) {
+	爬虫.OnHTML(`div.mod div.row dl dt a[target="_blank"]`, func(e *colly.HTMLElement) {
 		goLock.Add(1)
 		firstVideoLockOnce.Do(func() {
 			firstVideoLock.Done()
 		})
 		link := m.主站 + strings.TrimSpace(processLink(e.Attr("href")))
 		title := processTitle(e.Attr("title"))
-		img := strings.TrimSpace(e.ChildAttr("img", "src"))
+		img := strings.TrimSpace(e.ChildAttr("img", "data-src"))
 		rc <- mods.VideoContainer{Link: link, Title: title, Desc: "", Img: img}
 	})
 	go func() {
 		// todo optimize this part
-		for {
-			select {
-			case x, ok := <-rc:
-				if !ok {
-					continue
-				}
-				r = append(r, x)
-				goLock.Done()
-				// default:
-				// todo
-			}
+		for x := range rc {
+			r = append(r, x)
+			goLock.Done()
 		}
 	}()
 	// 分类转链接

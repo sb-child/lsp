@@ -6,7 +6,7 @@ import (
 	"crypto/cipher"
 	"errors"
 	"fmt"
-	"io/ioutil"
+	"io"
 	"net/http"
 	"os"
 	"os/exec"
@@ -22,6 +22,7 @@ import (
 
 	openssl "github.com/Luzifer/go-openssl/v4"
 	"github.com/gocolly/colly"
+	"github.com/jedib0t/go-pretty/v6/progress"
 )
 
 // regex
@@ -103,7 +104,7 @@ func UrlGetToStr(url string) (string, error) {
 			time.Sleep(time.Second * 5)
 			continue
 		}
-		b, err := ioutil.ReadAll(r.Body)
+		b, err := io.ReadAll(r.Body)
 		if err != nil {
 			fmt.Printf("读取失败: %s\n", err.Error())
 			time.Sleep(time.Second * 5)
@@ -211,9 +212,10 @@ type M3U8Content struct {
 }
 
 func (vdb *VideoDatabase) Init(dir, dbFile string) error {
-	vdb.dir = path.Join(dir, "_lsp.db")
 	if len(dbFile) != 0 {
 		vdb.dir = dbFile
+	} else {
+		vdb.dir = path.Join(dir, "_lsp.db")
 	}
 	db, err := gorm.Open(sqlite.Open(vdb.dir), &gorm.Config{
 		PrepareStmt: true,
@@ -413,30 +415,31 @@ type M3U8Downloader struct {
 	buffer [][]byte
 }
 
-func (d *M3U8Downloader) Download(video []*M3U8Content, dir string, name string) error {
+func (d *M3U8Downloader) Download(video []*M3U8Content, dir string, name string, title ...string) error {
+	progressTitle := "下载M3U8片段"
+	if len(title) == 1 {
+		progressTitle = title[0]
+	}
 	d.buffer = make([][]byte, len(video))
 	d.client = CollyCollectorSlow()
 	d.client.SetRequestTimeout(time.Second * 20)
 	d.wg = &sync.WaitGroup{}
 	count := len(video)
-	downloaded := 0
+	d.wg.Add(count)
 	t := time.NewTicker(time.Second)
 	done := make(chan struct{})
-	lock := sync.Mutex{}
-	go func() {
-		for {
-			select {
-			case <-done:
-				return
-			case <-t.C:
-				lock.Lock()
-				fmt.Printf("正在下载[%d]/[%d]: %d%%\n",
-					downloaded, count, 100*downloaded/count,
-				)
-				lock.Unlock()
-			}
-		}
-	}()
+	// progress bar
+	pw := progress.NewWriter()
+	pw.SetUpdateFrequency(time.Millisecond * 100)
+	pw.Style().Colors = progress.StyleColorsExample
+	pw.Style().Visibility.ETA = true
+	pw.Style().Visibility.ETAOverall = true
+	pw.Style().Visibility.Speed = true
+	pw.Style().Visibility.SpeedOverall = true
+	pw.SetAutoStop(false)
+	tracker := progress.Tracker{Message: progressTitle, Total: int64(count), Units: progress.UnitsDefault, DeferStart: false}
+	go pw.Render()
+	pw.AppendTracker(&tracker)
 	d.client.OnRequest(func(r *colly.Request) {})
 	d.client.OnError(func(r *colly.Response, err error) {
 		fmt.Printf("下载 %s 时报错: %s, 正在重试...\n", r.Request.URL, err.Error())
@@ -456,13 +459,10 @@ func (d *M3U8Downloader) Download(video []*M3U8Content, dir string, name string)
 		}
 		index, _ := strconv.ParseInt(r.Ctx.Get("video"), 10, 64)
 		d.buffer[index] = r.Body
-		lock.Lock()
-		downloaded++
-		lock.Unlock()
+		tracker.Increment(1)
 		d.wg.Done()
 	})
 	for index, v := range video {
-		d.wg.Add(1)
 		ctx := colly.NewContext()
 		ctx.Put("video", strconv.FormatInt((int64)(index), 10))
 		ctx.Put("key", v.Key)
@@ -470,6 +470,7 @@ func (d *M3U8Downloader) Download(video []*M3U8Content, dir string, name string)
 	}
 	d.wg.Wait()
 	t.Stop()
+	pw.Stop()
 	close(done)
 	fmt.Println("正在保存...")
 	fileBytes := bytes.Buffer{}
@@ -484,14 +485,12 @@ func (d *M3U8Downloader) Download(video []*M3U8Content, dir string, name string)
 	}
 	_, err = f.Write(fileBytes.Bytes())
 	if err != nil {
+		f.Close()
 		return err
 	}
 	f.Close()
 	fmt.Println("正在使用ffmpeg编码视频...")
 	e := exec.Command("ffmpeg", "-i", fileName, "-c", "copy", "-y", fileName+".o.mp4")
-	// if stdout, err := e.StdoutPipe(); err != nil {
-	// 	fmt.Println("编码出错:", err)
-	// }
 	if err := e.Start(); err != nil {
 		fmt.Println("ffmpeg执行失败:", err)
 	}
