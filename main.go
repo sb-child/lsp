@@ -292,7 +292,7 @@ func fetchTs(dir, dbFile string) error {
 			videoTitleShort = substr(videoTitleShort, 0, 10) + "..."
 		}
 		tracker := progress.Tracker{
-			Message:    fmt.Sprintf("解析片段[%d/%d]%s", i, count, videoTitleShort),
+			Message:    fmt.Sprintf("存储片段链接[%d/%d]%s", i, count, videoTitleShort),
 			Total:      int64(1),
 			Units:      progress.UnitsDefault,
 			DeferStart: false,
@@ -302,19 +302,32 @@ func fetchTs(dir, dbFile string) error {
 			tracker.MarkAsDone()
 			continue
 		}
+		if strings.Contains(v.VideoLink, "155bf.com") ||
+			strings.Contains(v.VideoLink, "lbbf9.com") {
+			tracker.UpdateMessage(tracker.Message + " - 黑名单")
+			tracker.MarkAsErrored()
+			db.VideoSetFetched(i, true)
+			continue
+		}
 		decoder := mtools.M3U8Decoder{}
 		err = decoder.Init(v.VideoLink)
 		if err != nil {
 			return err
 		}
 		tsLen := decoder.Len()
+		if tsLen <= 0 {
+			tracker.UpdateMessage(tracker.Message + " - 无效链接")
+			tracker.MarkAsErrored()
+			db.VideoSetFetched(i, true)
+			continue
+		}
 		tracker.UpdateTotal(int64(tsLen))
 		pw.AppendTracker(&tracker)
 		for j := 0; j < tsLen; j++ {
 			save(decoder, v, j, tsLen, i, (int)(count))
 			tracker.Increment(1)
 		}
-		// tracker.MarkAsDone()
+		tracker.MarkAsDone()
 		db.VideoSetFetched(i, true)
 	}
 	pw.Stop()

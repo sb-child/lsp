@@ -340,7 +340,11 @@ func (d *M3U8Decoder) init(list *[][]string) error {
 	for _, line := range strings.Split(m3u8Content, "\n") {
 		if strings.HasPrefix(line, "#EXT-X-KEY:") {
 			// get the URI of this line
-			url := M3U8KeyUrlMatch().FindStringSubmatch(line)[1]
+			urls := M3U8KeyUrlMatch().FindStringSubmatch(line)
+			url := ""
+			if len(urls) >= 1 {
+				url = urls[1]
+			}
 			if url == "" {
 				continue
 			}
