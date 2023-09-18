@@ -11,10 +11,10 @@ import (
 	"os"
 	"path"
 	"strings"
-	"sync"
 	"time"
 
 	"github.com/gookit/color"
+	"github.com/jedib0t/go-pretty/v6/progress"
 )
 
 const (
@@ -241,6 +241,16 @@ skip:
 	}
 }
 func fetchTs(dir, dbFile string) error {
+	// progress bar
+	pw := progress.NewWriter()
+	pw.SetUpdateFrequency(time.Millisecond * 100)
+	pw.Style().Colors = progress.StyleColorsExample
+	pw.Style().Visibility.ETA = true
+	pw.Style().Visibility.ETAOverall = true
+	pw.Style().Visibility.Speed = true
+	pw.Style().Visibility.SpeedOverall = true
+	pw.SetAutoStop(false)
+	go pw.Render()
 	fmt.Println("读取数据库...")
 	db := mtools.VideoDatabase{}
 	if err := db.Init(dir, dbFile); err != nil {
@@ -248,40 +258,8 @@ func fetchTs(dir, dbFile string) error {
 	}
 	fmt.Println("解析链接...")
 	count, _ := db.VideoLen()
-	t := time.NewTicker(time.Second)
 	done := make(chan struct{})
-	defer t.Stop()
 	defer close(done)
-	lock := sync.Mutex{}
-	status := struct {
-		VideoCount int
-		VideoDone  int
-		TsCount    int
-		TsDone     int
-	}{
-		VideoCount: (int)(count),
-		VideoDone:  0,
-		TsCount:    1,
-		TsDone:     1,
-	}
-	go func() {
-		for {
-			select {
-			case <-done:
-				return
-			case <-t.C:
-				lock.Lock()
-				fmt.Printf("视频[%d](%d%%): 正在存储[%d]/[%d]: %d%%\n",
-					status.VideoDone,
-					(status.VideoDone*100)/status.VideoCount,
-					status.TsDone,
-					status.TsCount,
-					(status.TsDone*100)/status.TsCount,
-				)
-				lock.Unlock()
-			}
-		}
-	}()
 	save := func(decoder mtools.M3U8Decoder, video *mtools.M3U8Video, tsIndex int, tsCount int, videoIndex int, videoCount int) error {
 		ts, err := decoder.Get(tsIndex)
 		if err != nil {
@@ -292,28 +270,37 @@ func fetchTs(dir, dbFile string) error {
 		if len(ts) == 5 {
 			key = ts[4]
 		}
-		db.M3U8ContentAdd(&mtools.M3U8Content{
+		err = db.M3U8ContentAdd(&mtools.M3U8Content{
 			VideoID:    int(video.ID),
 			Index:      tsIndex,
 			Content:    link,
 			Downloaded: false,
 			Key:        key,
 		})
-		lock.Lock()
-		status.TsCount = tsCount
-		status.TsDone = tsIndex + 1
-		status.VideoCount = videoCount
-		status.VideoDone = videoIndex
-		lock.Unlock()
+		if err != nil {
+			return err
+		}
 		return nil
 	}
 	for i := 1; i <= (int)(count); i++ {
 		v, err := db.VideoGet(i)
-		if v.Fetched {
-			continue
-		}
 		if err != nil {
 			return err
+		}
+		videoTitleShort := v.Title
+		if len([]rune(videoTitleShort)) > 10 {
+			videoTitleShort = substr(videoTitleShort, 0, 10) + "..."
+		}
+		tracker := progress.Tracker{
+			Message:    fmt.Sprintf("解析片段[%d/%d]%s", i, count, videoTitleShort),
+			Total:      int64(1),
+			Units:      progress.UnitsDefault,
+			DeferStart: false,
+		}
+		if v.Fetched {
+			tracker.UpdateMessage(tracker.Message + " - 跳过")
+			tracker.MarkAsDone()
+			continue
 		}
 		decoder := mtools.M3U8Decoder{}
 		err = decoder.Init(v.VideoLink)
@@ -321,12 +308,16 @@ func fetchTs(dir, dbFile string) error {
 			return err
 		}
 		tsLen := decoder.Len()
-
+		tracker.UpdateTotal(int64(tsLen))
+		pw.AppendTracker(&tracker)
 		for j := 0; j < tsLen; j++ {
 			save(decoder, v, j, tsLen, i, (int)(count))
+			tracker.Increment(1)
 		}
+		// tracker.MarkAsDone()
 		db.VideoSetFetched(i, true)
 	}
+	pw.Stop()
 	return nil
 }
 
@@ -349,7 +340,7 @@ func download(dir, dbFile string) error {
 		if len([]rune(videoTitleShort)) > 10 {
 			videoTitleShort = substr(videoTitleShort, 0, 10) + "..."
 		}
-		downloader.Download(content, dir, fmt.Sprintf("%d", videoDesc.ID), fmt.Sprintf("[%d/%d]%s", i, videoCount, videoTitleShort))
+		downloader.Download(content, dir, fmt.Sprintf("%d", videoDesc.ID), fmt.Sprintf("下载片段[%d/%d]%s", i, videoCount, videoTitleShort))
 		db.VideoSetDownloaded(i, true)
 	}
 	return nil
