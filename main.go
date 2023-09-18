@@ -150,7 +150,7 @@ func run(t task) {
 		return
 	}
 	// 获取分类, 检查分类是否正确
-	func() {
+	if x := func() bool {
 		fmt.Println("获取分类...")
 		tags := (*mod).GetAllTags()
 		fmt.Printf("共[%d]个\n", len(tags))
@@ -162,7 +162,7 @@ func run(t task) {
 				color.Cyan.Print(k)
 				fmt.Print("]\n")
 			}
-			return
+			return true
 		}
 		_checkTag := func(s string) bool {
 			_, ok := tags[s]
@@ -173,24 +173,27 @@ func run(t task) {
 			if !_checkTag(v) {
 				fmt.Printf("[%s]不属于任何一个分类\n", v)
 				os.Exit(10)
-				return
+				return true
 			}
 			if _, ok := tags_temp[v]; ok {
 				fmt.Printf("重复分类[%s]\n", v)
 				os.Exit(10)
-				return
+				return true
 			}
 			tags_temp[v] = struct{}{}
 		}
-	}()
+		return false
+	}(); x {
+		return
+	}
 	// === 初始化完成 ===
 	// 获取视频列表
-	func() {
+	if x := func() bool {
 		fmt.Println("获取视频列表...")
 		r := (*mod).GetVideos(t.tags)
 		if len(dld_dir) == 0 {
 			printVideoList(r)
-			return
+			return true
 		}
 		// 输出下载路径, 视频个数. 创建目录
 		fmt.Printf("准备下载[%s]<-[%d]\n", dld_dir, len(r))
@@ -200,7 +203,7 @@ func run(t task) {
 		db := mtools.VideoDatabase{}
 		if err := db.Init(dld_dir, t.dbFile); err != nil {
 			os.Exit(1)
-			return
+			return true
 		}
 		for _, v := range r {
 			mv := mtools.M3U8Video{
@@ -215,10 +218,13 @@ func run(t task) {
 			if err != nil {
 				fmt.Printf("保存时发生错误: %s\n", err.Error())
 				os.Exit(1)
-				return
+				return true
 			}
 		}
-	}()
+		return false
+	}(); x {
+		return
+	}
 skip:
 	// 提取ts列表
 	if err := fetchTs(dld_dir, t.dbFile); err != nil {
