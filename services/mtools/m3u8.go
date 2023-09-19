@@ -92,7 +92,13 @@ func init() {
 
 // end of regex
 
-func UrlGetToStr(url string) (string, error) {
+func UrlGetToStr(url string, logf ...func(msg string, a ...any)) (string, error) {
+	var log func(msg string, a ...any)
+	if len(logf) <= 0 {
+		log = func(msg string, a ...any) { fmt.Printf(msg, a...) }
+	} else {
+		log = logf[0]
+	}
 	var err error
 	for i := 0; i < 3; i++ {
 		hc := http.Client{
@@ -100,19 +106,19 @@ func UrlGetToStr(url string) (string, error) {
 		}
 		r, err := hc.Get(url)
 		if err != nil {
-			fmt.Printf("http错误: %s\n", err.Error())
+			log("http错误: %s\n", err.Error())
 			time.Sleep(time.Second * 5)
 			continue
 		}
 		b, err := io.ReadAll(r.Body)
 		if err != nil {
-			fmt.Printf("读取失败: %s\n", err.Error())
+			log("读取失败: %s\n", err.Error())
 			time.Sleep(time.Second * 5)
 			continue
 		}
 		return string(b), nil
 	}
-	fmt.Println("多次失败，放弃")
+	log("多次失败，放弃")
 	return "", err
 }
 func UrlGetToStrMust(url string) string {
@@ -300,6 +306,19 @@ func (vdb *VideoDatabase) M3U8ContentLen(videoID int) (int64, error) {
 
 type M3U8Decoder struct {
 	content [][]string
+	logFunc func(msg string, a ...any)
+}
+
+func (d *M3U8Decoder) LogCb(f func(msg string, a ...any)) {
+	d.logFunc = f
+}
+
+func (d *M3U8Decoder) log(msg string, a ...any) {
+	if d.logFunc == nil {
+		fmt.Printf(msg, a...)
+	} else {
+		d.logFunc(msg, a...)
+	}
 }
 
 func (d *M3U8Decoder) Init(m3u8url string) error {
@@ -330,8 +349,8 @@ func (d *M3U8Decoder) init(list *[][]string) error {
 	domain := (*list)[ptr][1]
 	lastDir := UrlDirMatch().FindStringSubmatch(domain + (*list)[ptr][2])[1]
 	m3u8url := domain + (*list)[ptr][2] + (*list)[ptr][3]
-	fmt.Printf("正在获取 %s\n", m3u8url)
-	m3u8Content, err := UrlGetToStr(m3u8url)
+	d.log("正在获取 %s\n", m3u8url)
+	m3u8Content, err := UrlGetToStr(m3u8url, d.log)
 	if err != nil {
 		return fmt.Errorf("获取失败: %s", err.Error())
 	}
@@ -357,7 +376,7 @@ func (d *M3U8Decoder) init(list *[][]string) error {
 				}
 			}
 			// get key
-			r, err := UrlGetToStr(url)
+			r, err := UrlGetToStr(url, d.log)
 			if err != nil {
 				return err
 			}
@@ -443,18 +462,19 @@ func (d *M3U8Downloader) Download(video []*M3U8Content, dir string, name string,
 	pw.Style().Visibility.ETAOverall = true
 	pw.Style().Visibility.Speed = true
 	pw.Style().Visibility.SpeedOverall = true
+	pw.Style().Options.Separator = " | "
 	pw.SetAutoStop(false)
 	tracker := progress.Tracker{Message: progressTitle, Total: int64(count), Units: progress.UnitsDefault, DeferStart: false}
 	go pw.Render()
 	pw.AppendTracker(&tracker)
 	d.client.OnRequest(func(r *colly.Request) {})
 	d.client.OnError(func(r *colly.Response, err error) {
-		fmt.Printf("下载 %s 时报错: %s, 正在重试...\n", r.Request.URL, err.Error())
+		pw.Log("下载 %s 时报错: %s, 正在重试...\n", r.Request.URL, err.Error())
 		r.Request.Retry()
 	})
 	d.client.OnResponse(func(r *colly.Response) {
 		if r.StatusCode != 200 {
-			fmt.Printf("下载 %s 时, 非预期的状态码: %d, 正在重试...\n", r.Request.URL, r.StatusCode)
+			pw.Log("下载 %s 时, 非预期的状态码: %d, 正在重试...\n", r.Request.URL, r.StatusCode)
 			r.Request.Retry()
 			return
 		}

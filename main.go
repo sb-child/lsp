@@ -249,14 +249,15 @@ func fetchTs(dir, dbFile string) error {
 	pw.Style().Visibility.ETAOverall = true
 	pw.Style().Visibility.Speed = true
 	pw.Style().Visibility.SpeedOverall = true
+	pw.Style().Options.Separator = " | "
 	pw.SetAutoStop(false)
 	go pw.Render()
-	fmt.Println("读取数据库...")
+	pw.Log("读取数据库...")
 	db := mtools.VideoDatabase{}
 	if err := db.Init(dir, dbFile); err != nil {
 		return err
 	}
-	fmt.Println("解析链接...")
+	pw.Log("解析链接...")
 	count, _ := db.VideoLen()
 	done := make(chan struct{})
 	defer close(done)
@@ -311,6 +312,7 @@ func fetchTs(dir, dbFile string) error {
 			continue
 		}
 		decoder := mtools.M3U8Decoder{}
+		decoder.LogCb(pw.Log)
 		err = decoder.Init(v.VideoLink)
 		if err != nil {
 			return err
