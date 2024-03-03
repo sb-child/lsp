@@ -51,7 +51,7 @@ func main() {
 	)
 	flag.StringVar(&selectedMod, "mod", "", "指定要加载的模块")
 	flag.StringVar(&downloadDir, "dir", getDownloadDir(), "可选: 指定下载目录")
-	flag.StringVar(&dbFile, "db", "", "可选: 指定下载目录")
+	flag.StringVar(&dbFile, "db", "", "可选: 指定数据库文件名")
 	flag.StringVar(&tagList, "tag", "", "可选: 指定分类(编号)并终止, 用英文逗号分隔, 否则为默认")
 	flag.BoolVar(&getModList, "mods", false, "可选: 获取当前可选模块并终止")
 	flag.BoolVar(&getTagList, "tags", false, "可选: 获取当前模块中, 全部可用的分类")

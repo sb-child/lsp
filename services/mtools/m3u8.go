@@ -428,6 +428,9 @@ func aesDecrypt(crypted, key []byte) ([]byte, error) {
 	blockSize := block.BlockSize()
 	blockMode := cipher.NewCBCDecrypter(block, key[:blockSize])
 	origData := make([]byte, len(crypted))
+	if len(origData)%blockSize != 0 {
+		return origData, fmt.Errorf("数据长度 %d 不能被块大小 %d 整除", len(origData), blockSize)
+	}
 	blockMode.CryptBlocks(origData, crypted)
 	return origData, nil
 }
@@ -482,6 +485,9 @@ func (d *M3U8Downloader) Download(video []*M3U8Content, dir string, name string,
 			dec, err := aesDecrypt(r.Body, []byte(key))
 			if err == nil {
 				r.Body = dec
+			} else {
+				pw.Log("下载 %s 时, 解密失败: %s, 跳过此片段...\n", r.Request.URL, err.Error())
+				r.Body = []byte{}
 			}
 		}
 		index, _ := strconv.ParseInt(r.Ctx.Get("video"), 10, 64)

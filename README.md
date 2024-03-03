@@ -23,11 +23,11 @@
 
 # 怎么用呢？
 
-请事先安装好`go`和`ffmpeg`~
+请事先安装好`go 1.20+`和`ffmpeg`~
 
 ```bash
 $ go get -v all
-$ go run main.go [参数...]
+$ go run main.go -mod yysp [参数...]
 ```
 
 下载完成后, 打开下载目录:
