@@ -26,7 +26,7 @@ jobs:
       run: GOOS=linux GOARCH=amd64 go build -o lsp_linux-amd64
 
     - name: Build Windows amd64
-      run: GOOS=windows GOARCH=amd64 go build -o lsp_windows-amd64
+      run: GOOS=windows GOARCH=amd64 go build -o lsp_windows-amd64.exe
  
     - name: Create Github Release
       id: create_release
