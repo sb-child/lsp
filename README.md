@@ -23,12 +23,59 @@
 
 # 怎么用呢？
 
-请事先安装好`go 1.20+`和`ffmpeg`~
+## Windows 用户看过来~
+
+选择你的阵营：
+
+### 自己编译
+
+1. 下载本 repo
+2. 安装 `go 1.20+`
+3. 把 [`ffmpeg`](https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip) 压缩包里 `ffmpeg-master-latest-win64-gpl/bin/` 的文件都放进 `C:\Windows\` 里面
+4. 开始使用吧：
 
 ```bash
-$ go get -v all
-$ go run main.go -mod yysp [参数...]
+go get -v all
+go run main.go -mod yysp [参数...]
 ```
+
+### 懒得编译啦，下载预编译版
+
+1. 在 ![GitHub release](https://img.shields.io/github/v/release/sb-child/lsp) 下载 `lsp_windows-amd64.exe`
+2. 把 [`ffmpeg`](https://github.com/BtbN/FFmpeg-Builds/releases/download/latest/ffmpeg-master-latest-win64-gpl.zip) 压缩包里 `ffmpeg-master-latest-win64-gpl/bin/` 的文件都放进 `C:\Windows\` 里面
+3. 在下载目录打开命令行，开始使用吧：
+
+```bash
+lsp_windows-amd64.exe -mod yysp [参数...]
+```
+
+## Linux 用户看过来~
+
+选择你的阵营：
+
+### 自己编译
+
+1. 下载本 repo
+2. 安装 `go 1.20+` 和 `ffmpeg`
+3. 开始使用吧：
+
+```bash
+go get -v all
+go run main.go -mod yysp [参数...]
+```
+
+### 懒得编译啦，下载预编译版
+
+1. 在 ![GitHub release](https://img.shields.io/github/v/release/sb-child/lsp) 下载 `lsp_linux-amd64`，并赋予可执行权限 `chmod +x lsp_linux-amd64`
+2. 安装 `ffmpeg`
+3. 在下载目录打开命令行，开始使用吧：
+
+```bash
+./lsp_linux-amd64 -mod yysp [参数...]
+```
+## 能用了之后
+
+todo
 
 下载完成后, 打开下载目录:
 
