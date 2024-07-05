@@ -8,7 +8,7 @@
 </h3>
 <div align='center'>
 <h4>已适配网站列表</h4>
-<span>~~miya(蜜芽)~~ 蜜芽坏掉了!</span>
+<span><del>miya(蜜芽)</del> 蜜芽坏掉了! </span>
 <span>yysp(夜夜视频)</span>
 </div>
 <br><br><br>
@@ -75,9 +75,11 @@ go run main.go -mod yysp [参数...]
 ```
 ## 能用了之后
 
-todo
+### 查看可用参数
 
-下载完成后, 打开下载目录:
+使用 `--help` 参数查看帮助
+
+### 下载目录结构
 
 ```bash
 _lsp.db # 数据库文件，用于断点下载，全部下载完成后可以删除
